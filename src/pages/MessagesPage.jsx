@@ -85,9 +85,9 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
         <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer" }}><ArrowLeft size={22} /></button>
         <h1 style={{ fontSize: 28, fontWeight: 800 }}>Mensajes</h1>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 0, border: "1px solid #eee", borderRadius: 16, overflow: "hidden", flex: 1, minHeight: 0 }}>
+      <div className={`messages-grid ${activeChat ? 'chat-active' : ''}`} style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 0, border: "1px solid #eee", borderRadius: 16, overflow: "hidden", flex: 1, minHeight: 0 }}>
         {/* Chat list */}
-        <div style={{ borderRight: "1px solid #eee", overflow: "auto" }}>
+        <div className="chat-list" style={{ borderRight: "1px solid #eee", overflow: "auto" }}>
           {chats.length === 0 && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 32, color: "#555", textAlign: "center" }}>
               <MessageCircle size={36} color="#ccc" style={{ marginBottom: 12 }} />
@@ -109,9 +109,11 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
         </div>
 
         {/* Chat conversation */}
+        <div className="chat-box" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {activeConvo ? (
           <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", gap: 12 }}>
+              <button className="mobile-back-btn" onClick={() => setActiveChat(null)} style={{ background: "none", border: "none", cursor: "pointer", display: "none", padding: 0, color: "#222" }}><ArrowLeft size={20} /></button>
               <Avatar name={activeConvo.otherName} size={36} />
               <div>
                 <div style={{ fontWeight: 600 }}>{activeConvo.otherName}</div>
@@ -139,8 +141,9 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
             </div>
           </div>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 15 }}>Selecciona una conversación</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 15, height: "100%" }}>Selecciona una conversación</div>
         )}
+        </div>
       </div>
     </div>
   );

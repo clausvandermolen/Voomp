@@ -444,9 +444,9 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid #eee", marginBottom: 28 }}>
+      <div className="hide-scrollbar" style={{ display: "flex", gap: 4, borderBottom: "1px solid #eee", marginBottom: 28, overflowX: "auto", overflowY: "hidden" }}>
         {[{ id: "profile", l: "Perfil" }, { id: "vehicles", l: "Mis Vehículos" }, { id: "ratings", l: "Mis calificaciones" }, { id: "dashboard", l: "Panel anfitrión" }, { id: "analytics", l: "Estadísticas" }, { id: "bookings", l: "Mis reservas" }, { id: "settings", l: "Configuración" }].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={tabStyle(t.id)}>{t.l}</button>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ ...tabStyle(t.id), flexShrink: 0, whiteSpace: "nowrap" }}>{t.l}</button>
         ))}
       </div>
 
