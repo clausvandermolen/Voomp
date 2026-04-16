@@ -19,21 +19,16 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   const [showPassConfirm, setShowPassConfirm] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
   const captchaRef = useRef(null);
-  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaResolveRef = useRef(null);
 
   if (!open) return null;
 
   const executeCaptcha = () => new Promise((resolve) => {
-    if (!HCAPTCHA_SITE_KEY || captchaToken) { resolve(captchaToken); return; }
-    setCaptchaToken(null);
+    if (!HCAPTCHA_SITE_KEY) { resolve(null); return; }
+    captchaResolveRef.current = resolve;
     captchaRef.current?.execute();
-    const interval = setInterval(() => {
-      setCaptchaToken(prev => {
-        if (prev) { clearInterval(interval); resolve(prev); }
-        return prev;
-      });
-    }, 200);
-    setTimeout(() => { clearInterval(interval); resolve(null); }, 15000);
+    // Fallback timeout — if hCaptcha doesn't respond in 8s, proceed without token
+    setTimeout(() => { if (captchaResolveRef.current) { captchaResolveRef.current = null; resolve(null); } }, 8000);
   });
 
   const handleRegister = async () => {
@@ -67,7 +62,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
       });
       if (signUpError) return setError(signUpError.message);
       setSuccess(true);
-      setTimeout(() => { onSuccess(); }, 1200);
+      setTimeout(() => { onSuccess(); }, 500);
     } catch(err) {
       setError("Error al conectar con el servidor.");
     } finally {
@@ -224,8 +219,11 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
             ref={captchaRef}
             sitekey={HCAPTCHA_SITE_KEY}
             size="invisible"
-            onVerify={(token) => setCaptchaToken(token)}
-            onExpire={() => setCaptchaToken(null)}
+            onVerify={(token) => {
+              if (captchaResolveRef.current) { captchaResolveRef.current(token); captchaResolveRef.current = null; }
+            }}
+            onExpire={() => { if (captchaResolveRef.current) { captchaResolveRef.current(null); captchaResolveRef.current = null; } }}
+            onError={() => { if (captchaResolveRef.current) { captchaResolveRef.current(null); captchaResolveRef.current = null; } }}
           />
         )}
       </div>
