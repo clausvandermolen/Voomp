@@ -42,23 +42,29 @@ export function BookingsProvider({ children }) {
     setBookings((data || []).map(mapBooking));
   };
 
-  // Realtime: keep bookings in sync across host & conductor sessions
+  // Realtime: keep bookings in sync — filtered by current user (conductor or host)
   useEffect(() => {
-    const channel = supabase
-      .channel('bookings-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          const mapped = mapBooking(payload.new);
-          setBookings(prev => prev.some(x => x.id === mapped.id) ? prev : [mapped, ...prev]);
-        } else if (payload.eventType === 'UPDATE') {
-          const mapped = mapBooking(payload.new);
-          setBookings(prev => prev.map(x => x.id === mapped.id ? { ...x, ...mapped } : x));
-        } else if (payload.eventType === 'DELETE') {
-          setBookings(prev => prev.filter(x => x.id !== payload.old.id));
-        }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    let channel;
+    const handleChange = (payload) => {
+      if (payload.eventType === 'INSERT') {
+        const mapped = mapBooking(payload.new);
+        setBookings(prev => prev.some(x => x.id === mapped.id) ? prev : [mapped, ...prev]);
+      } else if (payload.eventType === 'UPDATE') {
+        const mapped = mapBooking(payload.new);
+        setBookings(prev => prev.map(x => x.id === mapped.id ? { ...x, ...mapped } : x));
+      } else if (payload.eventType === 'DELETE') {
+        setBookings(prev => prev.filter(x => x.id !== payload.old.id));
+      }
+    };
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      channel = supabase
+        .channel('bookings-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `conductor_id=eq.${user.id}` }, handleChange)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `host_id=eq.${user.id}` }, handleChange)
+        .subscribe();
+    });
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
   const addBooking = async (data) => {
