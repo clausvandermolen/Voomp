@@ -276,9 +276,6 @@ export default function App() {
           } />
           <Route path="/home" element={
             <>
-              {/* Voomp Fix v3 Banner */}
-              <div style={{ position: "fixed", bottom: 20, right: 20, background: "#000", color: "#fff", padding: "8px 12px", borderRadius: 8, fontSize: 11, zIndex: 10000, opacity: 0.8, pointerEvents: "none", fontWeight: 700 }}>Voomp Fix v3 Active</div>
-
               <Header {...headerProps} />
               <CategoryBar onFilter={() => setFilterOpen(true)} showMap={showMap} setShowMap={setShowMap} />
               <HomePage listings={filteredListings} onSelect={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onFav={toggleFavorite} showMap={showMap} mapViewState={mapViewState} onMapViewChange={setMapViewState} />
