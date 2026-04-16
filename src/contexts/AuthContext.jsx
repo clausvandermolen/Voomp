@@ -97,13 +97,14 @@ export function AuthProvider({ children }) {
       setUser({
         id: uid,
         email: sessionUser?.email,
-        firstName: sessionUser?.user_metadata?.first_name || "",
-        lastNameP: sessionUser?.user_metadata?.last_name_p || "",
+        firstName: sessionUser?.user_metadata?.first_name || sessionUser?.user_metadata?.full_name?.split(' ')[0] || "",
+        lastNameP: sessionUser?.user_metadata?.last_name_p || sessionUser?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || "",
         lastNameM: sessionUser?.user_metadata?.last_name_m || "",
         countryCode: sessionUser?.user_metadata?.country_code || "+56",
         phone: sessionUser?.user_metadata?.phone || "",
         idType: sessionUser?.user_metadata?.id_type || "rut",
         idNumber: sessionUser?.user_metadata?.id_number || "",
+        avatar: sessionUser?.user_metadata?.avatar_url || "",
         vehicles: [],
         parking_preferences: {}
       });

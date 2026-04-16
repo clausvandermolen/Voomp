@@ -4,7 +4,7 @@ import { BRAND_COLOR, BRAND_GRADIENT, DARK_BG, VEHICLE_TYPES, ACCESS_TYPES, SECU
 import { Btn, Input, Pill } from "../components/ui";
 import CreateListingMap from "../components/CreateListingMap";
 
-const CreateListingPage = ({ onBack, onPublish, initialData }) => {
+const CreateListingPage = ({ onBack, onPublish, onDeletePhoto, initialData }) => {
   const [step, setStep] = useState(0);
   const [publishing, setPublishing] = useState(false);
 
@@ -315,6 +315,9 @@ const CreateListingPage = ({ onBack, onPublish, initialData }) => {
 
         {step === 2 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* Identity Banner for verification */}
+            <div style={{ background: "#000", color: "#fff", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 10 }}>Voomp Fix v3 Active - Identity Verified</div>
+
             <div>
               <label style={{ fontWeight: 600, marginBottom: 8, display: "block" }}>Título del anuncio</label>
               <Input placeholder="Ej: Estacionamiento techado en Providencia" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
@@ -337,7 +340,28 @@ const CreateListingPage = ({ onBack, onPublish, initialData }) => {
                   {form.photos.map((p, i) => (
                     <div key={i} style={{ position: "relative", width: 80, height: 80, borderRadius: 8, overflow: "hidden", flexShrink: 0 }}>
                       <img src={p} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <button onClick={() => setForm({ ...form, photos: form.photos.filter((_, idx) => idx !== i), photoFiles: (form.photoFiles || []).filter((_, idx) => idx !== i) })} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, cursor: "pointer", zIndex: 20 }}><X size={14} /></button>
+                      <button onClick={async (e) => {
+                        e.stopPropagation();
+                        // Snappy UI update: remove from local state immediately for responsiveness
+                        setForm(prev => {
+                          const newPhotos = [...(prev.photos || [])];
+                          const newPhotoFiles = [...(prev.photoFiles || [])];
+                          const isBlob = p.startsWith('blob:');
+                          if (!isBlob) {
+                            const blobIndex = prev.photos.slice(0, i).filter(url => url.startsWith('blob:')).length;
+                            if (blobIndex < newPhotoFiles.length) newPhotoFiles.splice(blobIndex, 1);
+                          }
+                          newPhotos.splice(i, 1);
+                          return { ...prev, photos: newPhotos, photoFiles: newPhotoFiles };
+                        });
+
+                        // Clear from backend if existing
+                        if (!p.startsWith('blob:') && onDeletePhoto) {
+                          await onDeletePhoto(p, form.id);
+                        }
+                      }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "transparent", border: "none", cursor: "pointer", zIndex: 9999, display: "flex", alignItems: "flex-start", justifyContent: "flex-end", padding: 4 }}>
+                        <div style={{ background: "#000000cc", border: "1.5px solid #ffffff", borderRadius: "50%", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, boxShadow: "0 2px 10px rgba(0,0,0,0.5)" }}><X size={18} /></div>
+                      </button>
                     </div>
                   ))}
                 </div>

@@ -144,6 +144,7 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, listings = [], s
   const { pushNotification } = useNotifications();
   const { fetchListings } = useListings();
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
   const [bookingDates, setBookingDates] = useState({ start: "", end: "" });
   const [bookingHours, setBookingHours] = useState({ startH: "08", startM: "00", endH: "10", endM: "00", arrivalH: "08", arrivalM: "00" });
   const [monthlyStartDate, setMonthlyStartDate] = useState("");
@@ -287,6 +288,23 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, listings = [], s
   // Fetch host reviews. Declared BEFORE the early return so hook order is stable
   // across renders where `listing` may flip from null to non-null.
   const hostIdForReviews = listing?.host?.userId || null;
+  const { toggleFavorite } = useListings();
+  const isSaved = listing?.favorite || false;
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2000);
+    } catch {
+      prompt('Copia este link:', window.location.href);
+    }
+  };
+
+  const handleToggleSave = () => {
+    toggleFavorite(listing.id);
+  };
+
   useEffect(() => {
     let cancelled = false;
     if (!hostIdForReviews) { setHostReviews([]); return; }
@@ -471,9 +489,18 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, listings = [], s
           {l.host.superhost && <Badge><Award size={12} /> Superanfitrión</Badge>}
           <span style={{ color: "#555", fontSize: 14 }}>· <span style={{ textDecoration: "underline", fontWeight: 500 }}>{l.location}</span></span>
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-            <Btn small outline><Share2 size={15} /> Compartir</Btn>
-            <Btn small outline><Heart size={15} /> Guardar</Btn>
-          </div>
+              <div style={{ position: "relative" }}>
+                {shareToast && (
+                  <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", background: "#222", color: "#fff", padding: "4px 12px", borderRadius: 8, fontSize: 12, whiteSpace: "nowrap", zIndex: 10 }}>¡Link copiado!</div>
+                )}
+                <Btn small outline onClick={handleShare}><Share2 size={15} /> Compartir</Btn>
+              </div>
+              {user && !isOwner && (
+                <Btn small outline onClick={handleToggleSave} style={{ color: isSaved ? "#e11d48" : "inherit", borderColor: isSaved ? "#e11d48" : undefined }}>
+                  <Heart size={15} fill={isSaved ? "#e11d48" : "none"} stroke={isSaved ? "#e11d48" : "currentColor"} /> {isSaved ? "Guardado" : "Guardar"}
+                </Btn>
+              )}
+            </div>
         </div>
 
         {/* Photo Grid */}

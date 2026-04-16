@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const ListingsContext = createContext();
 
 export function ListingsProvider({ children }) {
+  const { user } = useAuth();
   const [listings, setListings] = useState([]);
   const fetchListingsRef = useRef(null);
   const [category, setCategory] = useState("all");
@@ -20,6 +22,20 @@ export function ListingsProvider({ children }) {
       .order('created_at', { ascending: false });
 
     if (error) { console.error(error); setListings([]); return; }
+
+    let savedIds = [];
+    if (user?.id) {
+      try {
+        const { data: profile, error: profileError } = await supabase.from('profiles').select('saved_listing_ids').eq('id', user.id).single();
+        if (profileError) {
+          if (profileError.code !== 'PGRST116') console.error('Error fetching profile for favorites:', profileError);
+        } else {
+          savedIds = (profile?.saved_listing_ids || []).map(id => Number(id));
+        }
+      } catch (err) {
+        console.error('Error in fetchListings favorites logic:', err);
+      }
+    }
 
     const transformed = (data || []).map(l => {
       const p = l.profiles;
@@ -42,7 +58,7 @@ export function ListingsProvider({ children }) {
         security,
         vehicleTypes,
         rules,
-        favorite: false,
+        favorite: savedIds.includes(Number(l.id)),
         // Backwards-compatible field names
         priceUnit: l.price_unit,
         priceDaily: l.price_daily,
@@ -65,6 +81,10 @@ export function ListingsProvider({ children }) {
   };
   fetchListingsRef.current = fetchListings;
 
+  useEffect(() => {
+    fetchListings();
+  }, [user?.id]);
+
   // Realtime: refetch listings whenever any review changes (rating + comments live update).
   // Reviews are nested in the listings select, so the simplest correct strategy is to refetch.
   useEffect(() => {
@@ -80,6 +100,8 @@ export function ListingsProvider({ children }) {
   const addListing = async (form) => {
     const { data, error } = await supabase.from('listings').insert(form).select().single();
     if (error) { console.error(error); return null; }
+    // Update local state by refetching
+    await fetchListings();
     // Return raw data for photo upload
     return data;
   };
@@ -107,8 +129,42 @@ export function ListingsProvider({ children }) {
     setListings(prev => prev.filter(x => x.id !== id));
   };
 
-  const toggleFavorite = (id) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, favorite: !l.favorite } : l));
+  const toggleFavorite = async (id) => {
+    if (!user?.id) return;
+
+    setListings(prev => prev.map(l => Number(l.id) === Number(id) ? { ...l, favorite: !l.favorite } : l));
+
+    try {
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('saved_listing_ids')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (fetchError) throw fetchError;
+
+      const currentIds = (profile?.saved_listing_ids || []).map(x => Number(x));
+      const lid = Number(id);
+      const newIds = currentIds.includes(lid)
+        ? currentIds.filter(x => x !== lid)
+        : [...currentIds, lid];
+
+      if (profile) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ saved_listing_ids: newIds })
+          .eq('id', user.id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ id: user.id, email: user.email, saved_listing_ids: newIds });
+        if (insertError) throw insertError;
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      alert(`Error al guardar favorito: ${err.message || JSON.stringify(err)}`);
+      setListings(prev => prev.map(l => Number(l.id) === Number(id) ? { ...l, favorite: !l.favorite } : l));
+    }
   };
 
   const filteredListings = useMemo(() => {

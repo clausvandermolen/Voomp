@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Search, X, MessageCircle, Car, Menu, LogOut, Bell, BookOpen, Star, DollarSign, AlertCircle, CheckCircle, User, Settings, BarChart3, LayoutDashboard, CalendarCheck } from "lucide-react";
+import { Search, X, MessageCircle, Car, Menu, LogOut, Bell, BookOpen, Star, DollarSign, AlertCircle, CheckCircle, User, Settings, BarChart3, LayoutDashboard, CalendarCheck, Heart } from "lucide-react";
 import { RENTAL_TYPES, VEHICLE_TYPES, BRAND_COLOR, BRAND_GRADIENT } from "../constants";
 import { Avatar, Btn } from "./ui";
 import AutocompleteField from "./AutocompleteField";
@@ -46,6 +46,7 @@ const Header = ({ onNavigate, currentPage, searchQuery, setSearchQuery, onSearch
 
   const PROFILE_TABS = [
     { id: "profile",   label: "Perfil",          icon: User },
+    { id: "saved",     label: "Mis Voomps guardados", icon: Heart },
     { id: "vehicles",  label: "Mis Vehículos",   icon: Car },
     { id: "ratings",   label: "Mis calificaciones", icon: Star },
     { id: "dashboard", label: "Panel anfitrión", icon: LayoutDashboard },

@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
-import { MapPin, Star, Shield, Zap, Car, ChevronRight, DollarSign } from "lucide-react";
+import { MapPin, Shield, Zap, Car, ChevronRight, DollarSign, X } from "lucide-react";
 import { BRAND_COLOR, BRAND_GRADIENT, DARK_BG } from "../constants";
-import { Avatar } from "../components/ui";
+import { supabase } from "../lib/supabase";
+import MapView from "../components/MapView";
 
 const LandingPage = ({ onEnter, onRegister, onLogin }) => {
   const [scrollY, setScrollY] = useState(0);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" && window.innerWidth < 768
   );
+  const [showMap, setShowMap] = useState(false);
+  const [mapListings, setMapListings] = useState([]);
+  const [showWelcome, setShowWelcome] = useState(true);
+
   useEffect(() => {
     const h = () => setScrollY(window.scrollY);
     const r = () => setIsMobile(window.innerWidth < 768);
@@ -19,9 +24,19 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
     };
   }, []);
 
+  const openMapModal = async () => {
+    setShowMap(true);
+    const { data } = await supabase
+      .from("listings")
+      .select("id, title, price, lat, lng")
+      .not("lat", "is", null)
+      .not("lng", "is", null);
+    setMapListings(data || []);
+  };
+
   const features = [
     { icon: <Shield size={28} />, title: "Reserva segura", desc: "Cada reserva cuenta con verificación del anfitrión y del conductor para mayor tranquilidad." },
-    { icon: <MapPin size={28} />, title: "Encuentra cerca de ti", desc: "Miles de espacios verificados en tu ciudad. Desde garajes privados hasta estacionamientos ejecutivos." },
+    { icon: <MapPin size={28} />, title: "Encuentra cerca de ti", desc: "Espacios verificados en tu ciudad. Desde garajes privados hasta estacionamientos ejecutivos." },
     { icon: <Zap size={28} />, title: "Carga eléctrica", desc: "Filtra espacios con cargadores EV. Compatible con Tesla, CCS y Tipo 2 para tu vehículo eléctrico." },
     { icon: <DollarSign size={28} />, title: "Gana con tu espacio", desc: "¿Tienes un estacionamiento vacío? Publícalo y genera ingresos pasivos todos los meses." },
   ];
@@ -42,6 +57,30 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
       `}</style>
+
+      {/* Welcome popup */}
+      {showWelcome && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowWelcome(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.55)", backdropFilter: "blur(6px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: isMobile ? "90vw" : "min(460px, 90vw)", padding: isMobile ? "36px 24px" : "44px 36px", textAlign: "center", boxShadow: "0 24px 60px rgba(0,0,0,.3)", animation: "fadeUp .5s ease-out" }}>
+            <button onClick={() => setShowWelcome(false)} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} color="#999" /></button>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: BRAND_GRADIENT, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+              <Car size={28} color="#fff" />
+            </div>
+            <h2 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, marginBottom: 12, letterSpacing: -0.5 }}>
+              <span style={{ background: BRAND_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>My Voomp</span> sigue en desarrollo
+            </h2>
+            <p style={{ fontSize: isMobile ? 14 : 16, color: "#555", lineHeight: 1.7, marginBottom: 24 }}>
+              Estamos construyendo algo grande. Vamos a revolucionar la forma en que nos movemos en el mundo. Mantente atento a las novedades.
+            </p>
+            <a href="https://www.instagram.com/my_voomp?igsh=ZGtoM3JjeW43NjU=" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: isMobile ? "12px 24px" : "14px 28px", borderRadius: 12, background: "linear-gradient(135deg, #833AB4, #E1306C, #F77737)", color: "#fff", fontSize: isMobile ? 14 : 15, fontWeight: 700, textDecoration: "none", transition: "transform .2s, box-shadow .2s", boxShadow: "0 6px 20px rgba(225,48,108,.35)" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(225,48,108,.45)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(225,48,108,.35)"; }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+              @My_Voomp
+            </a>
+            <p style={{ fontSize: 12, color: "#aaa", marginTop: 16 }}>Haz clic en cualquier lugar para cerrar</p>
+          </div>
+        </div>
+      )}
 
       {/* Navbar */}
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: isMobile ? "12px 16px" : "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: scrollY > 50 ? "rgba(255,255,255,.95)" : "transparent", backdropFilter: scrollY > 50 ? "blur(12px)" : "none", borderBottom: scrollY > 50 ? "1px solid rgba(0,0,0,.06)" : "none", transition: "all .3s" }}>
@@ -64,10 +103,6 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.7) 100%)" }} />
         </div>
         <div style={{ position: "relative", zIndex: 2, textAlign: "center", maxWidth: 780, padding: isMobile ? "0 20px" : "0 24px", animation: "fadeUp .8s ease-out", width: "100%" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,.15)", backdropFilter: "blur(12px)", borderRadius: 30, padding: isMobile ? "6px 14px" : "8px 20px", marginBottom: isMobile ? 20 : 28, border: "1px solid rgba(255,255,255,.2)" }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ADE80", animation: "pulse 2s infinite" }} />
-            <span style={{ color: "#fff", fontSize: isMobile ? 12 : 14, fontWeight: 500 }}>+2,500 espacios en Santiago</span>
-          </div>
           <h1 style={{ fontSize: isMobile ? 34 : 56, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: isMobile ? 14 : 20, letterSpacing: isMobile ? -0.5 : -1 }}>
             Tu lugar para estacionar,{" "}
             <span style={{ background: BRAND_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>siempre seguro</span>
@@ -76,10 +111,10 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
             Voomp conecta conductores con espacios de estacionamiento verificados. Reserva en segundos, estaciona con tranquilidad.
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? 10 : 16, flexDirection: isMobile ? "column" : "row", flexWrap: "wrap", alignItems: "center" }}>
-            <button onClick={onEnter} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "none", background: BRAND_GRADIENT, color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 30px rgba(255,56,92,.4)", transition: "transform .2s, box-shadow .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 12px 40px rgba(255,56,92,.5)"; }} onMouseLeave={e => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 8px 30px rgba(255,56,92,.4)"; }}>
+            <button onClick={openMapModal} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "none", background: BRAND_GRADIENT, color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 30px rgba(255,56,92,.4)", transition: "transform .2s, box-shadow .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 12px 40px rgba(255,56,92,.5)"; }} onMouseLeave={e => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 8px 30px rgba(255,56,92,.4)"; }}>
               Explorar espacios
             </button>
-            <button onClick={onEnter} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "rgba(255,255,255,.1)", backdropFilter: "blur(8px)", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,.2)"; }} onMouseLeave={e => { e.target.style.background = "rgba(255,255,255,.1)"; }}>
+            <button onClick={onRegister} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "rgba(255,255,255,.1)", backdropFilter: "blur(8px)", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,.2)"; }} onMouseLeave={e => { e.target.style.background = "rgba(255,255,255,.1)"; }}>
               Publica tu espacio
             </button>
           </div>
@@ -127,46 +162,25 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
         </div>
       </section>
 
-      {/* Stats */}
-      <section style={{ background: DARK_BG, padding: isMobile ? "48px 20px" : "72px 24px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(auto-fit, minmax(180px, 1fr))", gap: isMobile ? 24 : 32, textAlign: "center" }}>
-          {[
-            { value: "2,500+", label: "Espacios activos" },
-            { value: "12,000+", label: "Conductores felices" },
-            { value: "4.89", label: "Calificación promedio" },
-            { value: "$0", label: "Comisión para conductores" },
-          ].map((s, i) => (
-            <div key={i}>
-              <div style={{ fontSize: isMobile ? 26 : 36, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{s.value}</div>
-              <div style={{ color: "rgba(255,255,255,.6)", fontSize: isMobile ? 13 : 15 }}>{s.label}</div>
+      {/* Map Modal */}
+      {showMap && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowMap(false)}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.5)", backdropFilter: "blur(4px)" }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 16, width: isMobile ? "95vw" : "min(90vw, 1000px)", height: isMobile ? "85vh" : "75vh", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.3)", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid #eee" }}>
+              <button onClick={() => setShowMap(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>
+              <span style={{ fontWeight: 700, fontSize: 16 }}>Espacios disponibles</span>
+              <div style={{ width: 28 }} />
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section style={{ maxWidth: 1120, margin: "0 auto", padding: isMobile ? "60px 20px" : "100px 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: isMobile ? 36 : 56 }}>
-          <span style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 2 }}>Testimonios</span>
-          <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, letterSpacing: -.5 }}>Lo que dicen nuestros usuarios</h2>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(300px, 1fr))", gap: isMobile ? 16 : 24 }}>
-          {[
-            { name: "Andrés M.", role: "Conductor", text: "Antes perdía 20 minutos buscando dónde estacionar. Con Voomp llego directo a mi lugar reservado. ¡Increíble!", avatar: "https://i.pravatar.cc/100?img=33", rating: 5 },
-            { name: "María G.", role: "Anfitriona", text: "Publiqué mi garaje vacío y ahora genero $55.000 al mes sin esfuerzo. La plataforma es super fácil de usar.", avatar: "https://i.pravatar.cc/100?img=1", rating: 5 },
-            { name: "Carlos R.", role: "Conductor", text: "Lo uso cada vez que viajo al aeropuerto. Mucho más barato que los estacionamientos oficiales y con seguro incluido.", avatar: "https://i.pravatar.cc/100?img=3", rating: 5 },
-          ].map((t, i) => (
-            <div key={i} style={{ padding: 28, borderRadius: 20, border: "1px solid #eee", display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", gap: 4 }}>{Array.from({ length: t.rating }).map((_, j) => <Star key={j} size={16} fill="#f5a623" stroke="none" />)}</div>
-              <p style={{ fontSize: 15, lineHeight: 1.7, color: "#444", flex: 1 }}>"{t.text}"</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 12, borderTop: "1px solid #f0f0f0" }}>
-                <Avatar src={t.avatar} name={t.name} size={40} />
-                <div><div style={{ fontWeight: 600 }}>{t.name}</div><div style={{ fontSize: 13, color: "#555" }}>{t.role}</div></div>
-              </div>
+            <div style={{ flex: 1 }}>
+              <MapView
+                listings={mapListings}
+                onSelect={() => { setShowMap(false); onRegister(); }}
+              />
             </div>
-          ))}
+          </div>
         </div>
-      </section>
+      )}
 
       {/* Final CTA */}
       <section style={{ padding: isMobile ? "60px 20px" : "100px 24px" }}>
@@ -174,13 +188,13 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
           <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,.08)" }} />
           <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,.06)" }} />
           <h2 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 800, color: "#fff", marginBottom: isMobile ? 12 : 16, position: "relative" }}>¿Listo para estacionar mejor?</h2>
-          <p style={{ color: "rgba(255,255,255,.85)", fontSize: isMobile ? 15 : 17, marginBottom: isMobile ? 24 : 32, maxWidth: 480, margin: isMobile ? "0 auto 24px" : "0 auto 32px", position: "relative" }}>Únete a miles de conductores y anfitriones que ya hacen parte de Voomp.</p>
+          <p style={{ color: "rgba(255,255,255,.85)", fontSize: isMobile ? 15 : 17, marginBottom: isMobile ? 24 : 32, maxWidth: 480, margin: isMobile ? "0 auto 24px" : "0 auto 32px", position: "relative" }}>Únete a la comunidad de conductores y anfitriones de Voomp.</p>
           <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? 10 : 16, position: "relative", flexDirection: isMobile ? "column" : "row", alignItems: "center" }}>
-            <button onClick={onEnter} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "none", background: "#fff", color: BRAND_COLOR, fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "transform .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => e.target.style.transform = "translateY(-2px)"} onMouseLeave={e => e.target.style.transform = "translateY(0)"}>
+            <button onClick={onRegister} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "none", background: "#fff", color: BRAND_COLOR, fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "transform .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => e.target.style.transform = "translateY(-2px)"} onMouseLeave={e => e.target.style.transform = "translateY(0)"}>
               Crear cuenta gratis
             </button>
-            <button onClick={onEnter} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "transparent", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }}>
-              Explorar sin cuenta
+            <button onClick={openMapModal} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "transparent", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }}>
+              Explorar espacios
             </button>
           </div>
         </div>

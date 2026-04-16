@@ -31,6 +31,7 @@ create table if not exists profiles (
   priv_profile text default 'public',
   priv_show_phone boolean default false,
   priv_show_email boolean default false,
+  saved_listing_ids bigint[] default '{}',
   created_at timestamptz default now()
 );
 

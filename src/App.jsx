@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { useAuth } from "./contexts/AuthContext";
 import { useNavigation } from "./contexts/NavigationContext";
@@ -18,6 +19,17 @@ import CreateListingPage from "./pages/CreateListingPage";
 import MessagesPage from "./pages/MessagesPage";
 import ListingDetailPage from "./pages/ListingDetailPage";
 import ProfilePage from "./pages/ProfilePage";
+
+function ListingDetailWrapper({ headerProps, listings, selectedListing, navigate, user, setListings, handleUpdateUser, handleBooking, bookings, setEditingListing }) {
+  const { id } = useParams();
+  const listing = listings.find(x => String(x.id) === String(id)) || selectedListing;
+  return (
+    <>
+      <Header {...headerProps} />
+      <ListingDetailPage listing={listing} onBack={() => navigate("home")} onNavigate={navigate} user={user} listings={listings} setListings={setListings} onUpdateUser={handleUpdateUser} onBooking={handleBooking} bookings={bookings} onEditListing={(l) => { setEditingListing(l); navigate("create"); }} />
+    </>
+  );
+}
 
 export default function App() {
   const { user, loading, logout, updateProfile } = useAuth();
@@ -54,74 +66,151 @@ export default function App() {
   };
 
   const handlePublish = async (form) => {
-    const listingData = {
-      title: form.title || "",
-      description: form.description || "",
-      location: form.location || "Sin ubicación",
-      address: form.address || "",
-      lat: form.lat || null,
-      lng: form.lng || null,
-      price: Number(form.price) || 0,
-      price_unit: form.priceUnit || "hora",
-      price_daily: Number(form.priceDaily) || null,
-      price_monthly: Number(form.priceMonthly) || null,
-      type: form.type || "covered",
-      vehicle_types: form.vehicleTypes || [],
-      access: form.access || "",
-      security: form.security || [],
-      dimensions: { width: form.width || 0, length: form.length || 0, height: form.height || null, dailyStart: form.dailyStart || "06:00", dailyEnd: form.dailyEnd || "22:00" },
-      ev: form.ev || false,
-      rules: form.rules ? (typeof form.rules === "string" ? form.rules.split("\n").filter(Boolean) : form.rules) : [],
-      amenities: form.amenities || [],
-      cancellation: form.cancellation || "flexible",
-      available_days: form.availableDays || [],
-      host_id: user.id,
-    };
-
-    let savedListing = null;
-    const photoErrors = [];
-
     try {
+      if (!user) {
+        alert("Debes iniciar sesión para publicar un anuncio.");
+        return;
+      }
+
+      const listingData = {
+        title: form.title || "",
+        description: form.description || "",
+        location: form.location || "Sin ubicación",
+        address: form.address || "",
+        lat: form.lat || null,
+        lng: form.lng || null,
+        price: Number(form.price) || 0,
+        price_unit: form.priceUnit || "hora",
+        price_daily: Number(form.priceDaily) || null,
+        price_monthly: Number(form.priceMonthly) || null,
+        type: form.type || "covered",
+        vehicle_types: form.vehicleTypes || [],
+        access: form.access || "",
+        security: form.security || [],
+        dimensions: { width: form.width || 0, length: form.length || 0, height: form.height || null, dailyStart: form.dailyStart || "06:00", dailyEnd: form.dailyEnd || "22:00" },
+        ev: form.ev || false,
+        rules: form.rules ? (typeof form.rules === "string" ? form.rules.split("\n").filter(Boolean) : form.rules) : [],
+        amenities: form.amenities || [],
+        cancellation: form.cancellation || "flexible",
+        available_days: form.availableDays || [],
+        host_id: user.id,
+      };
+
+      let savedListing = null;
+      const photoErrors = [];
+
       if (form.id) {
-         savedListing = await updateListing(form.id, listingData);
+        savedListing = await updateListing(form.id, listingData);
       } else {
-         savedListing = await addListing(listingData);
+        savedListing = await addListing(listingData);
       }
-    } catch(e) {
-      alert("Error al guardar el estacionamiento.");
-      return;
-    }
 
-    if (!savedListing) {
-      alert("Error al guardar el estacionamiento.");
-      return;
-    }
+      if (!savedListing) {
+        throw new Error("No se recibió confirmación del servidor al guardar el estacionamiento.");
+      }
 
-    if (form.photoFiles && form.photoFiles.length > 0) {
-      for (let i = 0; i < form.photoFiles.length; i++) {
-        const file = form.photoFiles[i];
-        const ext = file.name?.split('.').pop() || 'jpg';
-        const path = `${savedListing.id}/${Date.now()}_${i}.${ext}`;
-        const { error } = await supabase.storage.from('listing-photos').upload(path, file);
-        if (error) {
-          photoErrors.push(`${file.name || `foto ${i + 1}`}: ${error.message}`);
-          console.error("Storage error:", error);
-        } else {
-          const { data: { publicUrl } } = supabase.storage.from('listing-photos').getPublicUrl(path);
-          await supabase.from('listing_photos').insert({ listing_id: savedListing.id, url: publicUrl, position: i });
+      // --- 2. HANDLE NEW IMAGE UPLOADS ---
+      if (form.photoFiles && form.photoFiles.length > 0) {
+        // Calculate starting position for new photos
+        const { data: existingPhotos } = await supabase
+          .from('listing_photos')
+          .select('position')
+          .eq('listing_id', savedListing.id)
+          .order('position', { ascending: false })
+          .limit(1);
+        
+        const startPos = existingPhotos && existingPhotos.length > 0 ? existingPhotos[0].position + 1 : 0;
+
+        for (let i = 0; i < form.photoFiles.length; i++) {
+          const file = form.photoFiles[i];
+          const ext = file.name?.split('.').pop() || 'jpg';
+          const path = `${savedListing.id}/${Date.now()}_${i}.${ext}`;
+          
+          try {
+            const { error: storageError } = await supabase.storage.from('listing-photos').upload(path, file);
+            if (storageError) throw storageError;
+
+            const { data: { publicUrl } } = supabase.storage.from('listing-photos').getPublicUrl(path);
+            const { error: insertError } = await supabase.from('listing_photos').insert({ 
+              listing_id: savedListing.id, 
+              url: publicUrl, 
+              position: startPos + i 
+            });
+            if (insertError) throw insertError;
+          } catch (storageErr) {
+            photoErrors.push(`${file.name || `foto ${i + 1}`}: ${storageErr.message || "Error desconocido"}`);
+            console.error("Storage error:", storageErr);
+          }
         }
+        // Refetch to include the new photos in the local state
+        await fetchListings();
       }
-      fetchListings();
-    }
 
-    if (photoErrors.length > 0) {
-      alert(`Se guardó el estacionamiento, pero hubo errores al subir imágenes:\n\n${photoErrors.join('\n')}\n\nEs posible que falte configurar directrices RLS de Storage en Supabase para el bucket 'listing-photos'.`);
+      if (photoErrors.length > 0) {
+        alert(`Se guardó el estacionamiento, pero hubo errores al subir algunas imágenes:\n\n${photoErrors.join('\n')}\n\nPuedes intentar subirlas más tarde editando tu anuncio.`);
+      }
+
+      setEditingListing(null);
+    } catch (e) {
+      console.error("Error en handlePublish:", e);
+      alert(`Error crítico al publicar: ${e.message || "Ocurrió un error inesperado."}`);
+      // Re-throw so that CreateListingPage doesn't proceed to onBack()
+      throw e;
     }
-    setEditingListing(null);
   };
 
   const handleUpdateUser = async (updates) => {
     await updateProfile(updates);
+  };
+
+  const handleDeletePhoto = async (url, listingId) => {
+    if (!url || !listingId) return;
+    try {
+      // 1. Extract the filename from the URL (robust against tokens and encoding)
+      // Example: https://.../img.jpg?token=123 -> img.jpg
+      const filename = url.split('/').pop().split('?')[0];
+      if (!filename) throw new Error("URL de imagen inválida");
+
+      // 2. Search for the record using the listing_id and the filename
+      const { data: records, error: fetchError } = await supabase
+        .from('listing_photos')
+        .select('id, url')
+        .eq('listing_id', listingId)
+        .ilike('url', `%${filename}%`);
+      
+      if (fetchError) throw fetchError;
+
+      const record = records?.[0];
+
+      // 3. Delete from Storage regardless of record match (for resilience)
+      // We rely on the path structure: listing-photos/ID/filename
+      const parts = url.split('listing-photos/');
+      if (parts.length > 1) {
+        const path = parts[1].split('?')[0];
+        try {
+          await supabase.storage.from('listing-photos').remove([path]);
+        } catch (e) {
+          console.error("Storage removal failed, continuing:", e);
+        }
+      }
+
+      // 4. Delete from DB by ID if found
+      if (record) {
+        const { error: dbError } = await supabase
+          .from('listing_photos')
+          .delete()
+          .eq('id', record.id);
+        if (dbError) throw dbError;
+      }
+      
+      // 5. Success: update global listings state
+      await fetchListings();
+      return true;
+    } catch (e) {
+      console.error("Error definitivo en handleDeletePhoto:", e);
+      alert(`ERROR TÉCNICO: No se pudo eliminar de la base de datos (${e.message})`);
+      return false;
+    }
   };
 
   const handleBooking = async (bookingData) => {
@@ -182,33 +271,44 @@ export default function App() {
 
         <AuthModal open={authModal.open} onClose={() => setAuthModal({ ...authModal, open: false })} onSuccess={handleAuthSuccess} initialMode={authModal.mode} />
 
-        {page === "landing" ? (
-          <LandingPage onEnter={() => navigate("home")} onRegister={() => setAuthModal({ open: true, mode: "register" })} onLogin={() => setAuthModal({ open: true, mode: "login" })} />
-        ) : page === "create" ? (
-          <CreateListingPage onBack={() => { setEditingListing(null); navigate("home"); }} onPublish={handlePublish} initialData={editingListing} />
-        ) : page === "messages" ? (
-          <>
-            <Header {...headerProps} />
-            <MessagesPage onBack={() => navigate("home")} user={user} onMarkRead={markChatRead} />
-          </>
-        ) : page === "profile" ? (
-          <>
-            <Header {...headerProps} />
-            <ProfilePage onBack={() => navigate("home")} onNavigate={navigate} user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} listings={listings} setListings={setListings} bookings={bookings} setBookings={setBookings} onMarkRead={markChatRead} onSelectListing={(l) => { setSelectedListing(l); navigate("listing"); }} onUpdateListing={updateListing} onDeleteListing={deleteListing} onUpdateBooking={updateBooking} onEditListing={(l) => { setEditingListing(l); navigate("create"); }} initialTab={profileTab} onTabChange={setProfileTab} />
-          </>
-        ) : page === "listing" ? (
-          <>
-            <Header {...headerProps} />
-            <ListingDetailPage listing={listings.find(x => x.id === selectedListing?.id) || selectedListing} onBack={() => navigate("home")} onNavigate={navigate} user={user} listings={listings} setListings={setListings} onUpdateUser={handleUpdateUser} onBooking={handleBooking} bookings={bookings} onEditListing={(l) => { setEditingListing(l); navigate("create"); }} />
-          </>
-        ) : (
-          <>
-            <Header {...headerProps} />
-            <CategoryBar onFilter={() => setFilterOpen(true)} showMap={showMap} setShowMap={setShowMap} />
-            <HomePage listings={filteredListings} onSelect={(l) => { setSelectedListing(l); navigate("listing"); }} onFav={toggleFavorite} showMap={showMap} mapViewState={mapViewState} onMapViewChange={setMapViewState} />
-            <Footer />
-          </>
-        )}
+        <Routes>
+          <Route path="/" element={
+            <LandingPage onEnter={() => navigate("home")} onRegister={() => setAuthModal({ open: true, mode: "register" })} onLogin={() => setAuthModal({ open: true, mode: "login" })} />
+          } />
+          <Route path="/home" element={
+            <>
+              {/* Voomp Fix v3 Banner */}
+              <div style={{ position: "fixed", bottom: 20, right: 20, background: "#000", color: "#fff", padding: "8px 12px", borderRadius: 8, fontSize: 11, zIndex: 10000, opacity: 0.8, pointerEvents: "none", fontWeight: 700 }}>Voomp Fix v3 Active</div>
+
+              <Header {...headerProps} />
+              <CategoryBar onFilter={() => setFilterOpen(true)} showMap={showMap} setShowMap={setShowMap} />
+              <HomePage listings={filteredListings} onSelect={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onFav={toggleFavorite} showMap={showMap} mapViewState={mapViewState} onMapViewChange={setMapViewState} />
+              <Footer />
+            </>
+          } />
+          <Route path="/create" element={
+            <CreateListingPage onBack={() => { setEditingListing(null); navigate("home"); }} onPublish={handlePublish} onDeletePhoto={handleDeletePhoto} initialData={editingListing} />
+          } />
+          <Route path="/messages" element={
+            <>
+              <Header {...headerProps} />
+              <MessagesPage onBack={() => navigate("home")} user={user} onMarkRead={markChatRead} />
+            </>
+          } />
+          <Route path="/profile" element={
+            <>
+              <Header {...headerProps} />
+              <ProfilePage onBack={() => navigate("home")} onNavigate={navigate} user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} listings={listings} setListings={setListings} bookings={bookings} setBookings={setBookings} onMarkRead={markChatRead} onSelectListing={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onUpdateListing={updateListing} onDeleteListing={deleteListing} onUpdateBooking={updateBooking} onEditListing={(l) => { setEditingListing(l); navigate("create"); }} initialTab={profileTab} onTabChange={setProfileTab} />
+            </>
+          } />
+          <Route path="/listing/:id" element={
+            <ListingDetailWrapper headerProps={headerProps} listings={listings} selectedListing={selectedListing} navigate={navigate} user={user} setListings={setListings} handleUpdateUser={handleUpdateUser} handleBooking={handleBooking} bookings={bookings} setEditingListing={setEditingListing} />
+          } />
+          <Route path="/listing/:id/:slug" element={
+            <ListingDetailWrapper headerProps={headerProps} listings={listings} selectedListing={selectedListing} navigate={navigate} user={user} setListings={setListings} handleUpdateUser={handleUpdateUser} handleBooking={handleBooking} bookings={bookings} setEditingListing={setEditingListing} />
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
     </ErrorBoundary>
   );

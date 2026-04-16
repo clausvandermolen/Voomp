@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Star, Camera, Plus, MessageCircle, Calendar, Car, DollarSign, Eye, Edit, AlertCircle, CheckCircle, Check, X, ChevronRight, LogOut } from "lucide-react";
+import { ArrowLeft, Star, Camera, Plus, MessageCircle, Calendar, Car, DollarSign, Eye, Edit, AlertCircle, CheckCircle, Check, X, ChevronRight, LogOut, Heart } from "lucide-react";
 import { BRAND_COLOR, BRAND_GRADIENT, DARK_BG, VEHICLE_TYPES, SECURITY_FEATURES, CAR_COLORS, CAR_BRANDS, CAR_MODELS, getVehicleTypeForModel, getVehicleDimensions } from "../constants";
 import { formatCLP } from "../utils/format";
 import { supabase } from "../lib/supabase";
@@ -97,8 +97,11 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   const [driverRatings, setDriverRatings] = useState({}); // { [conductorId]: { avg, count } } — for host's incoming-bookings panel
   const [myDriverReviews, setMyDriverReviews] = useState([]); // reviews received as a driver (review_type='driver')
   const [myHostReviews, setMyHostReviews] = useState([]); // reviews received as a host (review_type='host')
-  const [ratingsSubTab, setRatingsSubTab] = useState("host"); // 'host' | 'driver' | 'listings'
-  const [dashboardSubTab, setDashboardSubTab] = useState("listings"); // 'listings' | 'incoming'
+  const [ratingsSubTab, setRatingsSubTab] = useState("host");
+  const [dashboardSubTab, setDashboardSubTab] = useState("listings");
+  const savedListings = (listings || []).filter(l => l.favorite);
+
+  // No local fetch needed, we use contextListings.filter(l => l.favorite) above.
 
   // Stats / Revenue
   const calculateRevenue = () => {
@@ -445,7 +448,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
 
       {/* Tabs */}
       <div className="hide-scrollbar" style={{ display: "flex", gap: 4, borderBottom: "1px solid #eee", marginBottom: 28, overflowX: "auto", overflowY: "hidden" }}>
-        {[{ id: "profile", l: "Perfil" }, { id: "vehicles", l: "Mis Vehículos" }, { id: "ratings", l: "Mis calificaciones" }, { id: "dashboard", l: "Panel anfitrión" }, { id: "analytics", l: "Estadísticas" }, { id: "bookings", l: "Mis reservas" }, { id: "settings", l: "Configuración" }].map(t => (
+        {[{ id: "profile", l: "Perfil" }, { id: "saved", l: "Mis Voomps guardados" }, { id: "vehicles", l: "Mis Vehículos" }, { id: "ratings", l: "Mis calificaciones" }, { id: "dashboard", l: "Panel anfitrión" }, { id: "analytics", l: "Estadísticas" }, { id: "bookings", l: "Mis reservas" }, { id: "settings", l: "Configuración" }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{ ...tabStyle(t.id), flexShrink: 0, whiteSpace: "nowrap" }}>{t.l}</button>
         ))}
       </div>
@@ -1588,6 +1591,36 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {tab === "saved" && (
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Mis Voomps guardados</h2>
+          {savedListings.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px 0", color: "#555", background: "#f7f7f7", borderRadius: 16 }}>
+              <Heart size={40} color="#ddd" style={{ marginBottom: 12 }} />
+              <p style={{ fontSize: 15, marginBottom: 4 }}>Aún no tienes Voomps guardados</p>
+              <p style={{ fontSize: 13, color: "#888" }}>Presiona el botón "Guardar" en cualquier estacionamiento para verlo aquí.</p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+              {savedListings.map(l => (
+                <div key={l.id} onClick={() => onSelectListing && onSelectListing(l)} style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #eee", cursor: "pointer", transition: "box-shadow .2s", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,.1)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                  {l.photos?.[0] ? (
+                    <img src={l.photos[0]} alt={l.title} style={{ width: "100%", height: 160, objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ width: "100%", height: 160, background: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center" }}><Car size={32} color="#bbb" /></div>
+                  )}
+                  <div style={{ padding: 16 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{l.title}</div>
+                    <div style={{ color: "#555", fontSize: 13, marginBottom: 8 }}>{l.location}</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: BRAND_COLOR }}>{l.price > 0 ? `$${Number(l.price).toLocaleString("es-CL")} / hora` : `$${Number(l.price_daily || 0).toLocaleString("es-CL")} / día`}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

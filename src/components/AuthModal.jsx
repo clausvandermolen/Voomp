@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, User, Phone, Lock, AlertCircle, CheckCircle } from "lucide-react";
+import { X, User, Phone, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { COUNTRY_CODES, ID_TYPES } from "../constants";
 import { supabase } from "../lib/supabase";
 import { formatRut } from "../utils/format";
@@ -12,12 +12,15 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [showPassConfirm, setShowPassConfirm] = useState(false);
+  const [showLoginPass, setShowLoginPass] = useState(false);
 
   if (!open) return null;
 
   const handleRegister = async () => {
     setError("");
-    if (!form.firstName || !form.lastNameP || !form.lastNameM) return setError("Completa tu nombre completo.");
+    if (!form.firstName || !form.lastNameP) return setError("Completa tu nombre y apellido paterno.");
     if (!form.email || !form.email.includes("@")) return setError("Ingresa un correo electrónico válido.");
     if (!form.phone) return setError("Ingresa tu número de teléfono.");
     if (!form.idNumber) return setError("Ingresa tu número de identificación.");
@@ -106,7 +109,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
                   <Input placeholder="Ej: González" value={form.lastNameP} onChange={e => setForm({ ...form, lastNameP: e.target.value })} />
                 </div>
                 <div>
-                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Apellido Materno *</label>
+                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Apellido Materno</label>
                   <Input placeholder="Ej: López" value={form.lastNameM} onChange={e => setForm({ ...form, lastNameM: e.target.value })} />
                 </div>
               </div>
@@ -141,11 +144,19 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Contraseña *</label>
-                  <Input icon={Lock} type="password" placeholder="Mín. 6 caracteres" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 10, border: "1px solid #ddd", background: "#fff" }}>
+                    <Lock size={18} color="#555" />
+                    <input type={showPass ? "text" : "password"} placeholder="Mín. 6 caracteres" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} style={{ border: "none", outline: "none", flex: 1, fontSize: 15, fontFamily: "inherit", color: "#222", background: "transparent" }} />
+                    <button type="button" onClick={() => setShowPass(s => !s)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#555" }}>{showPass ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                  </div>
                 </div>
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Confirmar *</label>
-                  <Input icon={Lock} type="password" placeholder="Repite la contraseña" value={form.passwordConfirm} onChange={e => setForm({ ...form, passwordConfirm: e.target.value })} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 10, border: "1px solid #ddd", background: "#fff" }}>
+                    <Lock size={18} color="#555" />
+                    <input type={showPassConfirm ? "text" : "password"} placeholder="Repite la contraseña" value={form.passwordConfirm} onChange={e => setForm({ ...form, passwordConfirm: e.target.value })} style={{ border: "none", outline: "none", flex: 1, fontSize: 15, fontFamily: "inherit", color: "#222", background: "transparent" }} />
+                    <button type="button" onClick={() => setShowPassConfirm(s => !s)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#555" }}>{showPassConfirm ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                  </div>
                 </div>
               </div>
 
@@ -165,7 +176,11 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
               </div>
               <div>
                 <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Contraseña</label>
-                <Input icon={Lock} type="password" placeholder="Tu contraseña" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 10, border: "1px solid #ddd", background: "#fff" }}>
+                  <Lock size={18} color="#555" />
+                  <input type={showLoginPass ? "text" : "password"} placeholder="Tu contraseña" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} style={{ border: "none", outline: "none", flex: 1, fontSize: 15, fontFamily: "inherit", color: "#222", background: "transparent" }} />
+                  <button type="button" onClick={() => setShowLoginPass(s => !s)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#555" }}>{showLoginPass ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                </div>
               </div>
 
               {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 16px", fontSize: 14, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}><AlertCircle size={16} /> {error}</div>}
@@ -173,6 +188,8 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
               <Btn primary full onClick={handleLogin} style={{ padding: "14px 24px", fontSize: 16, borderRadius: 12, marginTop: 8 }}>Iniciar sesión</Btn>
             </form>
           )}
+
+
         </div>
       </div>
     </div>
