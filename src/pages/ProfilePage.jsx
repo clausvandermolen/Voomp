@@ -226,15 +226,32 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
     }
   };
 
+  const AVATAR_ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+  const AVATAR_ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "webp"]);
+  const AVATAR_MAX_SIZE_MB = 5;
+
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !user) return;
-    const ext = file.name?.split('.').pop() || 'jpg';
-    const path = `${user.id}.${ext}`;
-    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+
+    const ext = (file.name?.split(".").pop() || "").toLowerCase();
+    if (!AVATAR_ALLOWED_MIME.has(file.type) || !AVATAR_ALLOWED_EXT.has(ext)) {
+      alert("Tipo de archivo no permitido. Solo se aceptan JPG, PNG o WEBP.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > AVATAR_MAX_SIZE_MB * 1024 * 1024) {
+      alert(`La imagen excede el tamaño máximo de ${AVATAR_MAX_SIZE_MB}MB.`);
+      e.target.value = "";
+      return;
+    }
+
+    // Use a fixed extension (from allowed set) to prevent path injection
+    const safePath = `${user.id}.${ext}`;
+    const { error } = await supabase.storage.from('avatars').upload(safePath, file, { upsert: true });
     if (error) { console.error('avatar upload:', error); return; }
     // Cache-bust so the new image overrides any previously cached URL
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(safePath);
     const bustedUrl = `${publicUrl}?v=${Date.now()}`;
     setEditForm({ ...editForm, avatar: bustedUrl });
     if (onUpdateUser) {

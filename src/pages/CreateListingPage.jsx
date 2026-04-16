@@ -120,9 +120,35 @@ const CreateListingPage = ({ onBack, onPublish, onDeletePhoto, initialData }) =>
     setShowSeriesPanel(false);
   };
 
+  const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+  const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
+  const MAX_FILE_SIZE_MB = 10;
+
   const handlePhotosUpload = (e) => {
     const files = Array.from(e.target.files);
+    const rejected = [];
+    const accepted = [];
+
     files.forEach(file => {
+      const ext = (file.name?.split(".").pop() || "").toLowerCase();
+      const sizeOk = file.size <= MAX_FILE_SIZE_MB * 1024 * 1024;
+      const mimeOk = ALLOWED_MIME_TYPES.has(file.type);
+      const extOk = ALLOWED_EXTENSIONS.has(ext);
+
+      if (!mimeOk || !extOk) {
+        rejected.push(`${file.name}: tipo no permitido (solo JPG, PNG, WEBP, GIF)`);
+      } else if (!sizeOk) {
+        rejected.push(`${file.name}: excede el tamaño máximo de ${MAX_FILE_SIZE_MB}MB`);
+      } else {
+        accepted.push(file);
+      }
+    });
+
+    if (rejected.length > 0) {
+      alert(`Los siguientes archivos fueron rechazados:\n\n${rejected.join("\n")}`);
+    }
+
+    accepted.forEach(file => {
       const previewUrl = URL.createObjectURL(file);
       setForm(prev => ({
         ...prev,

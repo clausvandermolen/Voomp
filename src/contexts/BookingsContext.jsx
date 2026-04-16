@@ -100,10 +100,30 @@ export function BookingsProvider({ children }) {
     return enriched;
   };
 
-  const updateBooking = async (id, updates) => {
+  // Security: only allow fields that the client legitimately needs to update.
+  // Status transitions (confirm/reject/complete) must go through the host-only
+  // allowed set. The DB RLS UPDATE policy checks auth.uid() = host_id OR conductor_id,
+  // but we add a client-side allowlist as defence-in-depth to prevent field injection.
+  const HOST_ALLOWED_FIELDS = new Set([
+    "status", "approved_at", "rejected_at", "rejection_reason",
+    "host_notes", "updated_at",
+  ]);
+  const CONDUCTOR_ALLOWED_FIELDS = new Set([
+    "vehicle_name", "vehicle_plate", "start_time", "end_time",
+    "start_date", "end_date", "updated_at",
+  ]);
+
+  const updateBooking = async (id, updates, role = "host") => {
+    const allowedFields = role === "conductor" ? CONDUCTOR_ALLOWED_FIELDS : HOST_ALLOWED_FIELDS;
+    const safeUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([k]) => allowedFields.has(k))
+    );
+    if (Object.keys(safeUpdates).length === 0) {
+      throw new Error("No hay campos permitidos para actualizar.");
+    }
     const { data: saved, error } = await supabase
       .from('bookings')
-      .update(updates)
+      .update(safeUpdates)
       .eq('id', id)
       .select()
       .single();
