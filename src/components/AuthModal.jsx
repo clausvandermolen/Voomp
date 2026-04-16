@@ -109,15 +109,15 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 520, maxHeight: "90vh", overflow: "auto", animation: "fadeIn .3s" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid #eee", position: "sticky", top: 0, background: "#fff", zIndex: 2, borderRadius: "20px 20px 0 0" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px 12px" }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 600, maxHeight: "92vh", overflow: "auto", animation: "fadeIn .3s" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 28px", borderBottom: "1px solid #eee", position: "sticky", top: 0, background: "#fff", zIndex: 2, borderRadius: "20px 20px 0 0" }}>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>
           <span style={{ fontWeight: 700, fontSize: 16 }}>{mode === "register" ? "Crear cuenta" : "Iniciar sesión"}</span>
           <div style={{ width: 28 }} />
         </div>
 
-        <div style={{ padding: 24 }}>
+        <div style={{ padding: "20px 28px 28px" }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "#f7f7f7", borderRadius: 12, padding: 4 }}>
             {[{ id: "register", l: "Registrarse" }, { id: "login", l: "Iniciar sesión" }].map(t => (
               <button key={t.id} onClick={() => { setMode(t.id); setError(""); }} style={{ flex: 1, padding: "10px 16px", borderRadius: 10, border: "none", background: mode === t.id ? "#fff" : "transparent", boxShadow: mode === t.id ? "0 1px 4px rgba(0,0,0,.08)" : "none", fontWeight: mode === t.id ? 700 : 400, fontSize: 14, cursor: "pointer", fontFamily: "inherit", color: "#222", transition: "all .2s" }}>{t.l}</button>
@@ -125,7 +125,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
           </div>
 
           {mode === "register" ? (
-            <form onSubmit={e => { e.preventDefault(); handleRegister(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <form onSubmit={e => { e.preventDefault(); handleRegister(); }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
                 <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Nombres *</label>
                 <Input icon={User} placeholder="Ej: Juan Pablo" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
@@ -196,7 +196,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
               </p>
             </form>
           ) : (
-            <form onSubmit={e => { e.preventDefault(); handleLogin(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <form onSubmit={e => { e.preventDefault(); handleLogin(); }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
                 <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Correo electrónico</label>
                 <Input type="email" placeholder="tu@correo.com" value={loginForm.email} onChange={e => setLoginForm({ ...loginForm, email: e.target.value })} />
