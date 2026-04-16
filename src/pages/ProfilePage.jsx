@@ -65,8 +65,6 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   useEffect(() => { if (onTabChange) onTabChange(tab); }, [tab]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(user || {});
-  const [calendarListing, setCalendarListing] = useState(null);
-
   // My Vehicles
   const [vehicles, setVehicles] = useState(user?.vehicles || []);
   const [newVehicle, setNewVehicle] = useState({ brand: "", customBrand: "", model: "", customModel: "", color: "", customColor: "", type: "", plate: "", ev: false, width: "", length: "", height: "" });
@@ -102,11 +100,6 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   const savedListings = (listings || []).filter(l => l.favorite);
 
   // No local fetch needed, we use contextListings.filter(l => l.favorite) above.
-
-  // Stats / Revenue
-  const calculateRevenue = () => {
-    return bookings.filter(b => b.status === "completed").reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
-  };
 
   // Parking preferences
   const [prefs, setPrefs] = useState(user?.parking_preferences || { type: "", ev: false, security: [] });

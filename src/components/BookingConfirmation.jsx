@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, CheckCircle, Camera, CreditCard, Lock, Info, Shield } from "lucide-react";
+import { AlertCircle, Camera, CreditCard, Lock, Info } from "lucide-react";
 import { BRAND_COLOR } from "../constants";
 import { formatCLP } from "../utils/format";
 import { Btn, Pill, Input, StarRating } from "./ui";

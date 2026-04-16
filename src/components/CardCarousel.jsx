@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Camera, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { BRAND_COLOR } from "../constants";
 

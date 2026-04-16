@@ -1,4 +1,3 @@
-import React from "react";
 import CardCarousel from "./CardCarousel";
 import { StarRating } from "./ui";
 import { formatCLP } from "../utils/format";

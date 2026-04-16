@@ -315,9 +315,6 @@ const CreateListingPage = ({ onBack, onPublish, onDeletePhoto, initialData }) =>
 
         {step === 2 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Identity Banner for verification */}
-            <div style={{ background: "#000", color: "#fff", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 700, textAlign: "center", marginBottom: 10 }}>Voomp Fix v3 Active - Identity Verified</div>
-
             <div>
               <label style={{ fontWeight: 600, marginBottom: 8, display: "block" }}>Título del anuncio</label>
               <Input placeholder="Ej: Estacionamiento techado en Providencia" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />

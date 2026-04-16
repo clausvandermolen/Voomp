@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BRAND_COLOR } from "../constants";
 
 const AutocompleteField = ({ label, value, onChange, options, placeholder }) => {

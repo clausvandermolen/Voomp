@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
     // Safety timeout: never stay loading forever. Generous so slow networks
     // (especially mobile) don't race fetchProfile and cause a spurious logout.
     const timeout = setTimeout(() => {
-      setLoading(prev => { if (prev) console.warn('Auth loading timeout'); return false; });
+      setLoading(false);
     }, 20000);
 
     return () => { sub?.unsubscribe(); clearTimeout(timeout); };

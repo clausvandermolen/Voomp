@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { DollarSign } from "lucide-react";
 import { BRAND_COLOR, VEHICLE_TYPES, ACCESS_TYPES, SECURITY_FEATURES } from "../constants";
 import { Pill, Btn, Input } from "./ui";

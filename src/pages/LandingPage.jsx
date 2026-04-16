@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MapPin, Shield, Zap, Car, ChevronRight, DollarSign, X } from "lucide-react";
-import { BRAND_COLOR, BRAND_GRADIENT, DARK_BG } from "../constants";
+import { BRAND_COLOR, BRAND_GRADIENT } from "../constants";
 import { supabase } from "../lib/supabase";
 import MapView from "../components/MapView";
 
