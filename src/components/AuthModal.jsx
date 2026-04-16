@@ -11,7 +11,7 @@ const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   const [mode, setMode] = useState(initialMode);
   useEffect(() => { setMode(initialMode); }, [initialMode]);
-  const [form, setForm] = useState({ firstName: "", lastNameP: "", lastNameM: "", email: "", countryCode: "+56", phone: "", idType: "rut", idNumber: "", password: "", passwordConfirm: "" });
+  const [form, setForm] = useState({ firstName: "", lastName1: "", lastName2: "", email: "", countryCode: "+56", phone: "", idType: "rut", idNumber: "", password: "", passwordConfirm: "" });
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -38,7 +38,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
 
   const handleRegister = async () => {
     setError("");
-    if (!form.firstName || !form.lastNameP) return setError("Completa tu nombre y apellido paterno.");
+    if (!form.firstName || !form.lastName1) return setError("Completa tu nombre y apellido paterno.");
     if (!form.email || !form.email.includes("@")) return setError("Ingresa un correo electrónico válido.");
     if (!form.phone) return setError("Ingresa tu número de teléfono.");
     if (!form.idNumber) return setError("Ingresa tu número de identificación.");
@@ -56,8 +56,8 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
           captchaToken: token ?? undefined,
           data: {
             first_name: form.firstName,
-            last_name_p: form.lastNameP,
-            last_name_m: form.lastNameM,
+            last_name_1: form.lastName1,
+            last_name_2: form.lastName2,
             phone: `${form.countryCode} ${form.phone}`,
             country_code: form.countryCode,
             id_type: form.idType,
@@ -132,12 +132,12 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Apellido Paterno *</label>
-                  <Input placeholder="Ej: González" value={form.lastNameP} onChange={e => setForm({ ...form, lastNameP: e.target.value })} />
+                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Primer apellido *</label>
+                  <Input placeholder="Ej: González" value={form.lastName1} onChange={e => setForm({ ...form, lastName1: e.target.value })} />
                 </div>
                 <div>
-                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Apellido Materno</label>
-                  <Input placeholder="Ej: López" value={form.lastNameM} onChange={e => setForm({ ...form, lastNameM: e.target.value })} />
+                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Segundo apellido</label>
+                  <Input placeholder="Ej: López" value={form.lastName2} onChange={e => setForm({ ...form, lastName2: e.target.value })} />
                 </div>
               </div>
               <div>

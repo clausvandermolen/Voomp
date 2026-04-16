@@ -352,7 +352,7 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, listings = [], s
         target_id: hostId,
         listing_id: listing.id,
         author_id: user.id,
-        author_name: `${user.firstName || ''} ${user.lastNameP || ''}`.trim(),
+        author_name: `${user.firstName || ''} ${user.lastName1 || ''}`.trim(),
         rating: hostReviewRating,
         comment: hostReviewText.trim(),
       }).select().single();
@@ -370,13 +370,13 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, listings = [], s
         review_type: 'listing',
         listing_id: listing.id,
         author_id: user.id,
-        author_name: `${user.firstName || ""} ${user.lastNameP || ""}`.trim(),
+        author_name: `${user.firstName || ""} ${user.lastName1 || ""}`.trim(),
         rating: reviewRating,
         comment: reviewText.trim(),
       }).select().single();
       if (error) { console.error(error); alert('No se pudo publicar la reseña.'); return; }
       // Optimistic update
-      const newReview = inserted || { author_name: `${user.firstName || ""} ${user.lastNameP || ""}`.trim(), author_id: user.id, rating: reviewRating, comment: reviewText.trim(), created_at: new Date().toISOString() };
+      const newReview = inserted || { author_name: `${user.firstName || ""} ${user.lastName1 || ""}`.trim(), author_id: user.id, rating: reviewRating, comment: reviewText.trim(), created_at: new Date().toISOString() };
       const updatedReviews = [...reviews, newReview];
       const sum = updatedReviews.reduce((s, r) => s + (Number(r.rating) || 0), 0);
       const newRating = updatedReviews.length > 0 ? +(sum / updatedReviews.length).toFixed(2) : 0;

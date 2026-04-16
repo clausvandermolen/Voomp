@@ -18,7 +18,7 @@ export function ListingsProvider({ children }) {
   const fetchListings = async () => {
     const { data, error } = await supabase
       .from('listings')
-      .select('*, listing_photos(id, url, position), reviews(id, rating, comment, author_name, author_id, created_at, review_type), profiles!host_id(id, first_name, last_name_p, last_name_m, avatar_url)')
+      .select('*, listing_photos(id, url, position), reviews(id, rating, comment, author_name, author_id, created_at, review_type), profiles!host_id(id, first_name, last_name_1, last_name_2, avatar_url)')
       .order('created_at', { ascending: false });
 
     if (error) { console.error(error); setListings([]); return; }
@@ -66,7 +66,7 @@ export function ListingsProvider({ children }) {
         reviewsCount: l.reviews_count,
         availableDays: Array.isArray(l.available_days) ? l.available_days : [],
         host: p ? {
-          name: `${p.first_name || ""} ${p.last_name_p || ""} ${(p.last_name_m || "")[0] || ""}.`.trim(),
+          name: `${p.first_name || ""} ${p.last_name_1 || ""} ${(p.last_name_2 || "")[0] || ""}.`.trim(),
           avatar: p.avatar_url,
           superhost: false,
           since: new Date(l.created_at).getFullYear().toString(),

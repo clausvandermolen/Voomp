@@ -156,7 +156,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
         listing_id: type === 'listing' ? (listingId || targetId) : (listingId || null),
         target_id: targetId,
         author_id: user.id,
-        author_name: `${user.firstName || ''} ${user.lastNameP || ''}`.trim(),
+        author_name: `${user.firstName || ''} ${user.lastName1 || ''}`.trim(),
         rating,
         comment,
       });
@@ -391,7 +391,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   }).length;
 
   const stats = { earnings: monthlyEarnings, bookings: activeBookings, rating: avgRating, views: myListings.length * 12 };
-  const displayName = user ? `${user.firstName} ${user.lastNameP} ${user.lastNameM}` : "";
+  const displayName = user ? `${user.firstName} ${user.lastName1} ${user.lastName2}` : "";
   const displayEmail = user?.email || "";
   const displayPhone = user?.phone || "";
   const displayId = user ? `${user.idType === "rut" ? "RUT" : "Pasaporte"}: ${user.idNumber}` : "";
@@ -428,7 +428,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
           )}
         </div>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800 }}>{isEditing ? `${editForm.firstName || ""} ${editForm.lastNameP || ""}`.trim() : displayName}</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 800 }}>{isEditing ? `${editForm.firstName || ""} ${editForm.lastName1 || ""}`.trim() : displayName}</h1>
           <div style={{ color: "#555", fontSize: 15, marginTop: 4 }}>
             {myListings.length > 0 ? "Anfitrión" : "Conductor"} · Miembro desde {memberSince}
           </div>

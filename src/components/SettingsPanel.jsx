@@ -60,10 +60,10 @@ const SettingsPanel = ({ user, onUpdateUser, onLogout }) => {
         {sections.filter(s => s.id === openSection).map(s => (
         <div key={s.id}>
           {openSection === "personal" && s.id === "personal" && (
-            <form onSubmit={e => { e.preventDefault(); saveUser({ firstName: form.firstName, lastNameP: form.lastNameP, lastNameM: form.lastNameM, email: form.email, phone: form.phone, idType: form.idType, idNumber: form.idNumber }); }} style={sectionStyle}>
+            <form onSubmit={e => { e.preventDefault(); saveUser({ firstName: form.firstName, lastName1: form.lastName1, lastName2: form.lastName2, email: form.email, phone: form.phone, idType: form.idType, idNumber: form.idNumber }); }} style={sectionStyle}>
               <div><label style={labelStyle}>Nombres</label><input style={inputStyle} value={form.firstName || ""} onChange={e => setForm({ ...form, firstName: e.target.value })} /></div>
-              <div><label style={labelStyle}>Apellido paterno</label><input style={inputStyle} value={form.lastNameP || ""} onChange={e => setForm({ ...form, lastNameP: e.target.value })} /></div>
-              <div><label style={labelStyle}>Apellido materno</label><input style={inputStyle} value={form.lastNameM || ""} onChange={e => setForm({ ...form, lastNameM: e.target.value })} /></div>
+              <div><label style={labelStyle}>Primer apellido</label><input style={inputStyle} value={form.lastName1 || ""} onChange={e => setForm({ ...form, lastName1: e.target.value })} /></div>
+              <div><label style={labelStyle}>Segundo apellido</label><input style={inputStyle} value={form.lastName2 || ""} onChange={e => setForm({ ...form, lastName2: e.target.value })} /></div>
               <div><label style={labelStyle}>Email</label><input type="email" style={inputStyle} value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div><label style={labelStyle}>Teléfono</label><input style={inputStyle} value={form.phone || ""} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
               <div><label style={labelStyle}>Tipo de identificación</label>
@@ -73,7 +73,7 @@ const SettingsPanel = ({ user, onUpdateUser, onLogout }) => {
               </div>
               <div><label style={labelStyle}>Número de identificación</label><input style={inputStyle} value={form.idNumber || ""} onChange={e => setForm({ ...form, idNumber: (form.idType || "rut") === "rut" ? formatRut(e.target.value) : e.target.value })} /></div>
               {msg && <div style={{ fontSize: 13, color: msg.includes("Error") ? "#b91c1c" : "#008A05", fontWeight: 600 }}>{msg}</div>}
-              <Btn primary onClick={() => saveUser({ firstName: form.firstName, lastNameP: form.lastNameP, lastNameM: form.lastNameM, email: form.email, phone: form.phone, idType: form.idType, idNumber: form.idNumber })} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Btn>
+              <Btn primary onClick={() => saveUser({ firstName: form.firstName, lastName1: form.lastName1, lastName2: form.lastName2, email: form.email, phone: form.phone, idType: form.idType, idNumber: form.idNumber })} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Btn>
             </form>
           )}
 

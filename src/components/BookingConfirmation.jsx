@@ -115,7 +115,7 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       listing_title: listing.title,
       photo_url: (listing.photos || [])[0] || null,
       conductor_id: user.id,
-      conductor_name: `${user.firstName || ""} ${user.lastNameP || ""} ${user.lastNameM || ""}`.trim(),
+      conductor_name: `${user.firstName || ""} ${user.lastName1 || ""} ${user.lastName2 || ""}`.trim(),
       host_id: listing.host?.userId,
       host_name: listing.host?.name || "Anfitrión",
       vehicle_name: vehicleInfo?.name || null,
