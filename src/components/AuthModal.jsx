@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, User, Phone, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { COUNTRY_CODES, ID_TYPES } from "../constants";
 import { supabase } from "../lib/supabase";
 import { formatRut } from "../utils/format";
 import { Input, Btn } from "./ui";
+
+const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 
 const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   const [mode, setMode] = useState(initialMode);
@@ -15,8 +18,23 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   const [showPass, setShowPass] = useState(false);
   const [showPassConfirm, setShowPassConfirm] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
+  const captchaRef = useRef(null);
+  const [captchaToken, setCaptchaToken] = useState(null);
 
   if (!open) return null;
+
+  const executeCaptcha = () => new Promise((resolve) => {
+    if (!HCAPTCHA_SITE_KEY || captchaToken) { resolve(captchaToken); return; }
+    setCaptchaToken(null);
+    captchaRef.current?.execute();
+    const interval = setInterval(() => {
+      setCaptchaToken(prev => {
+        if (prev) { clearInterval(interval); resolve(prev); }
+        return prev;
+      });
+    }, 200);
+    setTimeout(() => { clearInterval(interval); resolve(null); }, 15000);
+  });
 
   const handleRegister = async () => {
     setError("");
@@ -30,10 +48,12 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
     if (form.password !== form.passwordConfirm) return setError("Las contraseñas no coinciden.");
 
     try {
+      const token = await executeCaptcha();
       const { error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
+          captchaToken: token ?? undefined,
           data: {
             first_name: form.firstName,
             last_name_p: form.lastNameP,
@@ -46,11 +66,13 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
         }
       });
       if (signUpError) return setError(signUpError.message);
-
       setSuccess(true);
       setTimeout(() => { onSuccess(); }, 1200);
     } catch(err) {
       setError("Error al conectar con el servidor.");
+    } finally {
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     }
   };
 
@@ -58,14 +80,19 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
     setError("");
     if (!loginForm.email || !loginForm.password) return setError("Completa todos los campos.");
     try {
+      const token = await executeCaptcha();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
+        options: { captchaToken: token ?? undefined },
       });
       if (signInError) return setError("Credenciales incorrectas.");
       onSuccess();
     } catch(err) {
       setError("Error al conectar con el servidor.");
+    } finally {
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     }
   };
 
@@ -191,6 +218,16 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
 
 
         </div>
+
+        {HCAPTCHA_SITE_KEY && (
+          <HCaptcha
+            ref={captchaRef}
+            sitekey={HCAPTCHA_SITE_KEY}
+            size="invisible"
+            onVerify={(token) => setCaptchaToken(token)}
+            onExpire={() => setCaptchaToken(null)}
+          />
+        )}
       </div>
     </div>
   );
