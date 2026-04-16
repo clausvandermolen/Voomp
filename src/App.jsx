@@ -14,7 +14,6 @@ import FilterContent from "./components/FilterContent";
 import AuthModal from "./components/AuthModal";
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
-import Footer from "./pages/Footer";
 import CreateListingPage from "./pages/CreateListingPage";
 import MessagesPage from "./pages/MessagesPage";
 import ListingDetailPage from "./pages/ListingDetailPage";
@@ -283,7 +282,6 @@ export default function App() {
               <Header {...headerProps} />
               <CategoryBar onFilter={() => setFilterOpen(true)} showMap={showMap} setShowMap={setShowMap} />
               <HomePage listings={filteredListings} onSelect={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onFav={toggleFavorite} showMap={showMap} mapViewState={mapViewState} onMapViewChange={setMapViewState} />
-              <Footer />
             </>
           } />
           <Route path="/create" element={
