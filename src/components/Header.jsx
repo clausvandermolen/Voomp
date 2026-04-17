@@ -49,7 +49,7 @@ const Header = ({ onNavigate, currentPage, searchQuery, setSearchQuery, onSearch
     { id: "saved",     label: "Mis Voomps guardados", icon: Heart },
     { id: "vehicles",  label: "Mis Vehículos",   icon: Car },
     { id: "ratings",   label: "Mis calificaciones", icon: Star },
-    { id: "dashboard", label: "Panel anfitrión", icon: LayoutDashboard },
+    { id: "dashboard", label: "Panel del anfitrión", icon: LayoutDashboard },
     { id: "analytics", label: "Estadísticas",    icon: BarChart3 },
     { id: "bookings",  label: "Mis reservas",    icon: CalendarCheck },
     { id: "settings",  label: "Configuración",   icon: Settings },
@@ -135,7 +135,7 @@ const Header = ({ onNavigate, currentPage, searchQuery, setSearchQuery, onSearch
                       return (
                         <div
                           key={n.id}
-                          onClick={() => { markRead(n.id); if (n.link) onNavigate(n.link); setNotifOpen(false); }}
+                          onClick={() => { markRead(n.id); if (n.link) { const [pg, tb, sb] = n.link.split('/'); onNavigate(pg, tb ? { tab: tb, subTab: sb } : undefined); } setNotifOpen(false); }}
                           style={{ display: "flex", gap: 12, padding: "12px 18px", background: n.read ? "#fff" : "#fef7f5", cursor: n.link ? "pointer" : "default", borderBottom: "1px solid #f5f5f5", transition: "background .15s" }}
                           onMouseEnter={e => { if (n.link) e.currentTarget.style.background = "#f9f9f9"; }}
                           onMouseLeave={e => e.currentTarget.style.background = n.read ? "#fff" : "#fef7f5"}
@@ -294,7 +294,7 @@ const Header = ({ onNavigate, currentPage, searchQuery, setSearchQuery, onSearch
               const cfg = NOTIF_ICONS[n.type] || NOTIF_ICONS.default;
               const IconComp = cfg.icon;
               return (
-                <div key={n.id} onClick={() => { markRead(n.id); if (n.link) onNavigate(n.link); setNotifOpen(false); }} style={{ display: "flex", gap: 12, padding: "14px 20px", background: n.read ? "#fff" : "#fef7f5", cursor: n.link ? "pointer" : "default", borderBottom: "1px solid #f5f5f5" }}>
+                <div key={n.id} onClick={() => { markRead(n.id); if (n.link) { const [pg, tb, sb] = n.link.split('/'); onNavigate(pg, tb ? { tab: tb, subTab: sb } : undefined); } setNotifOpen(false); }} style={{ display: "flex", gap: 12, padding: "14px 20px", background: n.read ? "#fff" : "#fef7f5", cursor: n.link ? "pointer" : "default", borderBottom: "1px solid #f5f5f5" }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <IconComp size={16} color={cfg.color} />
                   </div>

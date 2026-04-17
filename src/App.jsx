@@ -32,7 +32,7 @@ function ListingDetailWrapper({ headerProps, listings, selectedListing, navigate
 
 export default function App() {
   const { user, loading, logout, updateProfile } = useAuth();
-  const { page, navigate, selectedListing, setSelectedListing, editingListing, setEditingListing, filterOpen, setFilterOpen, showMap, setShowMap, mapViewState, setMapViewState, authModal, setAuthModal, profileTab, setProfileTab } = useNavigation();
+  const { page, navigate, selectedListing, setSelectedListing, editingListing, setEditingListing, filterOpen, setFilterOpen, showMap, setShowMap, mapViewState, setMapViewState, authModal, setAuthModal, profileTab, setProfileTab, profileDashboardSubTab, setProfileDashboardSubTab } = useNavigation();
   const { listings, setListings, filteredListings, fetchListings, addListing, updateListing, deleteListing, toggleFavorite, category, setCategory, searchQuery, setSearchQuery, searchVehicle, setSearchVehicle, searchDate, setSearchDate, searchRentalType, setSearchRentalType, filters, setFilters } = useListings();
   const { bookings, setBookings, fetchBookings, addBooking, updateBooking } = useBookings();
   const { unreadMessages, markChatRead } = useMessages();
@@ -222,7 +222,7 @@ export default function App() {
         type: 'booking',
         title: 'Nueva solicitud de reserva',
         body: `${bookingData.conductor_name || 'Un conductor'} quiere reservar ${bookingData.listing_title || 'tu espacio'}.`,
-        link: 'profile',
+        link: 'profile/dashboard/incoming',
       });
     }
     if (bookingData.conductor_id) {
@@ -293,7 +293,7 @@ export default function App() {
           <Route path="/profile" element={
             <>
               <Header {...headerProps} />
-              <ProfilePage onBack={() => navigate("home")} onNavigate={navigate} user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} listings={listings} setListings={setListings} bookings={bookings} setBookings={setBookings} onMarkRead={markChatRead} onSelectListing={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onUpdateListing={updateListing} onDeleteListing={deleteListing} onUpdateBooking={updateBooking} onEditListing={(l) => { setEditingListing(l); navigate("create"); }} initialTab={profileTab} onTabChange={setProfileTab} />
+              <ProfilePage onBack={() => navigate("home")} onNavigate={navigate} user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} listings={listings} setListings={setListings} bookings={bookings} setBookings={setBookings} onMarkRead={markChatRead} onSelectListing={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onUpdateListing={updateListing} onDeleteListing={deleteListing} onUpdateBooking={updateBooking} onEditListing={(l) => { setEditingListing(l); navigate("create"); }} initialTab={profileTab} onTabChange={setProfileTab} initialDashboardSubTab={profileDashboardSubTab} onDashboardSubTabChange={setProfileDashboardSubTab} />
             </>
           } />
           <Route path="/listing/:id" element={

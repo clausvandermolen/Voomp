@@ -23,9 +23,11 @@ export function NavigationProvider({ children }) {
   const [mapViewState, setMapViewState] = useState(null);
   const [authModal, setAuthModal] = useState({ open: false, mode: "register" });
   const [profileTab, setProfileTab] = useState("profile");
+  const [profileDashboardSubTab, setProfileDashboardSubTab] = useState(null);
 
   const navigate = (p, opts) => {
     if (p === "profile" && opts?.tab) setProfileTab(opts.tab);
+    if (p === "profile" && opts?.subTab) setProfileDashboardSubTab(opts.subTab);
     
     window.scrollTo(0, 0);
 
@@ -56,6 +58,7 @@ export function NavigationProvider({ children }) {
       mapViewState, setMapViewState,
       authModal, setAuthModal,
       profileTab, setProfileTab,
+      profileDashboardSubTab, setProfileDashboardSubTab,
     }}>
       {children}
     </NavigationContext.Provider>

@@ -50,9 +50,15 @@ const FormAutocomplete = ({ value, onChange, options, placeholder, disabled = fa
   );
 };
 
-const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listings = [], setListings, bookings = [], setBookings, onMarkRead, onSelectListing, onUpdateListing, onDeleteListing, onUpdateBooking, onEditListing, initialTab, onTabChange }) => {
+const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listings = [], setListings, bookings = [], setBookings, onMarkRead, onSelectListing, onUpdateListing, onDeleteListing, onUpdateBooking, onEditListing, initialTab, onTabChange, initialDashboardSubTab, onDashboardSubTabChange }) => {
   const { pushNotification } = useNotifications();
   const { checkIn, checkOut, proposeModification, respondToModification } = useBookings();
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const [chatBooking, setChatBooking] = useState(null);
   const [modModal, setModModal] = useState(null);
   const [modEndDate, setModEndDate] = useState("");
@@ -102,7 +108,13 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   const [myDriverReviews, setMyDriverReviews] = useState([]); // reviews received as a driver (review_type='driver')
   const [myHostReviews, setMyHostReviews] = useState([]); // reviews received as a host (review_type='host')
   const [ratingsSubTab, setRatingsSubTab] = useState("host");
-  const [dashboardSubTab, setDashboardSubTab] = useState("listings");
+  const [dashboardSubTab, setDashboardSubTab] = useState(initialDashboardSubTab || "listings");
+  useEffect(() => {
+    if (initialDashboardSubTab && initialDashboardSubTab !== dashboardSubTab) {
+      setDashboardSubTab(initialDashboardSubTab);
+      if (onDashboardSubTabChange) onDashboardSubTabChange(null); // reset so it doesn't re-trigger
+    }
+  }, [initialDashboardSubTab]);
   const savedListings = (listings || []).filter(l => l.favorite);
 
   // No local fetch needed, we use contextListings.filter(l => l.favorite) above.
@@ -547,12 +559,14 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="hide-scrollbar" style={{ display: "flex", gap: 4, borderBottom: "1px solid #eee", marginBottom: 28, overflowX: "auto", overflowY: "hidden" }}>
-        {[{ id: "profile", l: "Perfil" }, { id: "saved", l: "Mis Voomps guardados" }, { id: "vehicles", l: "Mis Vehículos" }, { id: "ratings", l: "Mis calificaciones" }, { id: "dashboard", l: "Panel anfitrión" }, { id: "analytics", l: "Estadísticas" }, { id: "bookings", l: "Mis reservas" }, { id: "settings", l: "Configuración" }].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ ...tabStyle(t.id), flexShrink: 0, whiteSpace: "nowrap" }}>{t.l}</button>
-        ))}
-      </div>
+      {/* Tabs — mobile only (desktop uses Header profile dropdown) */}
+      {isMobile && (
+        <div className="hide-scrollbar" style={{ display: "flex", gap: 4, borderBottom: "1px solid #eee", marginBottom: 28, overflowX: "auto", overflowY: "hidden" }}>
+          {[{ id: "profile", l: "Perfil" }, { id: "saved", l: "Mis Voomps guardados" }, { id: "vehicles", l: "Mis Vehículos" }, { id: "ratings", l: "Mis calificaciones" }, { id: "dashboard", l: "Panel del anfitrión" }, { id: "analytics", l: "Estadísticas" }, { id: "bookings", l: "Mis reservas" }, { id: "settings", l: "Configuración" }].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ ...tabStyle(t.id), flexShrink: 0, whiteSpace: "nowrap" }}>{t.l}</button>
+          ))}
+        </div>
+      )}
 
       {tab === "dashboard" && (
         <div>
