@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Star, Camera, Plus, MessageCircle, Calendar, Car, DollarSign, Eye, Edit, AlertCircle, CheckCircle, Check, X, ChevronRight, LogOut, Heart } from "lucide-react";
+import { ArrowLeft, Star, Camera, Plus, MessageCircle, Calendar, Car, DollarSign, Eye, Edit, AlertCircle, CheckCircle, Check, X, ChevronRight, LogOut, Heart, Clock } from "lucide-react";
+import { useBookings } from "../contexts/BookingsContext";
 import { BRAND_COLOR, BRAND_GRADIENT, DARK_BG, VEHICLE_TYPES, SECURITY_FEATURES, CAR_COLORS, CAR_BRANDS, CAR_MODELS, getVehicleTypeForModel, getVehicleDimensions } from "../constants";
 import { formatCLP } from "../utils/format";
 import { supabase } from "../lib/supabase";
@@ -51,7 +52,12 @@ const FormAutocomplete = ({ value, onChange, options, placeholder, disabled = fa
 
 const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listings = [], setListings, bookings = [], setBookings, onMarkRead, onSelectListing, onUpdateListing, onDeleteListing, onUpdateBooking, onEditListing, initialTab, onTabChange }) => {
   const { pushNotification } = useNotifications();
+  const { checkIn, checkOut, proposeModification, respondToModification } = useBookings();
   const [chatBooking, setChatBooking] = useState(null);
+  const [modModal, setModModal] = useState(null);
+  const [modEndDate, setModEndDate] = useState("");
+  const [modEndTime, setModEndTime] = useState("");
+  const [modSubmitting, setModSubmitting] = useState(false);
   const [expandedListingId, setExpandedListingId] = useState(null);
   const [reviewsListing, setReviewsListing] = useState(null);
   const [listingReviewsShown, setListingReviewsShown] = useState(5);
@@ -214,6 +220,91 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
     setPrefsSaving(true);
     if (onUpdateUser) await onUpdateUser({ parking_preferences: prefs });
     setPrefsSaving(false);
+  };
+
+  // --- Check-in / check-out handlers (conductor) ---
+  const handleCheckIn = async (b) => {
+    try {
+      await checkIn(b.id);
+      pushNotification({ userId: b.hostId, type: 'booking', title: 'El conductor hizo check-in', body: `${b.conductorName || 'El conductor'} llegó a tu espacio en ${b.listingTitle}.`, link: 'profile' });
+    } catch(e) { alert(e.message || "Error al hacer check-in"); }
+  };
+
+  const handleCheckOut = async (b) => {
+    if (!window.confirm("¿Confirmas que estás saliendo del estacionamiento?")) return;
+    try {
+      const { enriched, creditAdjustment } = await checkOut(b.id);
+      pushNotification({ userId: enriched.hostId, type: 'booking', title: 'El conductor hizo check-out', body: `${b.conductorName || 'El conductor'} salió de tu espacio en ${b.listingTitle}.`, link: 'profile' });
+      if (creditAdjustment < 0) {
+        const credit = Math.abs(creditAdjustment);
+        alert(`Check-out registrado. Se acreditaron $${credit.toLocaleString("es-CL")} a tu cuenta por salida anticipada (70% del tiempo no usado).`);
+      }
+    } catch(e) { alert(e.message || "Error al hacer check-out"); }
+  };
+
+  const handleRespondMod = async (b, accept) => {
+    const action = accept ? "aceptar" : "rechazar";
+    if (!window.confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} la propuesta de modificación del anfitrión?`)) return;
+    try {
+      await respondToModification(b.id, accept);
+      pushNotification({
+        userId: b.hostId, type: 'booking',
+        title: accept ? 'Modificación aceptada' : 'Modificación rechazada',
+        body: accept ? `El conductor aceptó el cambio de estadía en ${b.listingTitle}.` : `El conductor rechazó el cambio de estadía en ${b.listingTitle}.`,
+        link: 'profile',
+      });
+    } catch(e) { alert(e.message || "Error al responder la modificación"); }
+  };
+
+  // --- Propose modification handler (host) ---
+  const handleProposeMod = async () => {
+    if (!modModal) return;
+    setModSubmitting(true);
+    try {
+      const b = modModal;
+      const isHourly = b.priceUnit === "hora";
+      const currentEndDT = isHourly
+        ? new Date(`${b.endDate}T${b.endTime}`)
+        : new Date(`${b.endDate}T23:59:59`);
+      const newEndDT = isHourly
+        ? new Date(`${b.endDate}T${modEndTime}`)
+        : new Date(`${modEndDate}T23:59:59`);
+
+      if (isNaN(newEndDT.getTime())) throw new Error("Fecha u hora inválida");
+      const diffMs = newEndDT.getTime() - currentEndDT.getTime();
+      if (diffMs === 0) throw new Error("La nueva hora debe ser diferente a la actual");
+      const modType = diffMs > 0 ? 'extension' : 'reduction';
+
+      let diffAmount = 0;
+      if (isHourly) {
+        diffAmount = Math.round((diffMs / (1000 * 60 * 60)) * (b.price || 0));
+      } else if (b.priceUnit === "día") {
+        diffAmount = Math.round((diffMs / (1000 * 60 * 60 * 24)) * (b.price || 0));
+      } else {
+        const dailyRate = (b.monthlyInstallment || b.price || 0) / 30;
+        diffAmount = Math.round((diffMs / (1000 * 60 * 60 * 24)) * dailyRate);
+      }
+      const modNewTotal = Math.max(0, (b.total || 0) + diffAmount);
+
+      await proposeModification(b.id, {
+        modEndDate: isHourly ? b.endDate : modEndDate,
+        modEndTime: isHourly ? modEndTime : null,
+        modNewTotal,
+        modType,
+      });
+
+      const newEndLabel = isHourly ? modEndTime : modEndDate;
+      pushNotification({
+        userId: b.conductorId, type: 'booking',
+        title: modType === 'extension' ? 'El anfitrión propone extender tu estadía' : 'El anfitrión propone reducir tu estadía',
+        body: modType === 'extension'
+          ? `Nuevo fin: ${newEndLabel} — Deberás pagar $${Math.abs(diffAmount).toLocaleString("es-CL")} adicional si aceptas.`
+          : `Nuevo fin: ${newEndLabel} — Recibirás $${Math.abs(diffAmount).toLocaleString("es-CL")} de crédito si aceptas.`,
+        link: 'bookings',
+      });
+      setModModal(null); setModEndDate(""); setModEndTime("");
+    } catch(e) { alert(e.message || "Error al proponer modificación"); }
+    setModSubmitting(false);
   };
 
   const handleSaveProfile = async () => {
@@ -555,8 +646,9 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
               {incomingBookings.slice(0, incomingBookingsShown).map(b => {
                 const isPending = b.status === "pending_approval";
                 const isRejected = b.status === "rejected";
+                const isActive = b.status === "active";
                 const statusColor = isPending ? "#c76d00" : isRejected || b.status === "cash_unpaid" ? "#b91c1c" : "#008A05";
-                const statusLabel = isPending ? "Pendiente de aprobación" : isRejected ? "Rechazada" : b.status === "completed" ? "Pagada" : b.status === "cash_unpaid" ? "Pago no recibido" : "Confirmada";
+                const statusLabel = isPending ? "Pendiente de aprobación" : isRejected ? "Rechazada" : b.status === "completed" ? "Pagada" : b.status === "cash_unpaid" ? "Pago no recibido" : isActive ? "En curso" : "Confirmada";
                 const handleApprove = async () => {
                   try {
                     if (onUpdateBooking) await onUpdateBooking(b.id, { status: "confirmed", approved_at: new Date().toISOString() });
@@ -653,6 +745,26 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                     {isCash && isCashUnpaid && (
                       <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #eee", fontSize: 12, color: "#b91c1c", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                         <AlertCircle size={14} /> Pago no recibido — deuda aplicada al conductor: {formatCLP(bookingTotal + Math.round(bookingTotal * 0.3))} (total + 30%)
+                      </div>
+                    )}
+                    {isActive && (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #eee" }}>
+                        <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                          <Clock size={14} /> Conductor en tu espacio desde las {b.checkedInAt ? new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "—"}
+                        </div>
+                        {!b.modStatus || b.modStatus === 'rejected' ? (
+                          <Btn outline onClick={() => { setModModal(b); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
+                            Proponer cambio de estadía
+                          </Btn>
+                        ) : b.modStatus === 'pending' ? (
+                          <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <AlertCircle size={14} /> Esperando respuesta del conductor…
+                          </div>
+                        ) : b.modStatus === 'approved' ? (
+                          <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <CheckCircle size={14} /> Modificación aceptada por el conductor
+                          </div>
+                        ) : null}
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: isPending ? 8 : 12, paddingTop: isPending ? 0 : 12, borderTop: isPending ? "none" : "1px solid #eee" }}>
@@ -1414,12 +1526,16 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
               {myBookings.slice(0, myBookingsShown).map(b => {
                 const isPending = b.status === "pending_approval";
                 const isRejected = b.status === "rejected";
-                const isCompleted = b.status === "completed" || b.status === "confirmed";
-                const canRateListing = isCompleted && !doneReviews[`${b.id}_listing`];
-                const canRateHost = isCompleted && !doneReviews[`${b.id}_host`];
-                const badgeBg = isPending ? "#fef7f0" : isRejected ? "#fef2f2" : "#e8f5e8";
-                const badgeColor = isPending ? "#c76d00" : isRejected ? "#b91c1c" : "#008A05";
-                const badgeText = isPending ? "Pendiente" : isRejected ? "Rechazada" : "Confirmada";
+                const isActive = b.status === "active";
+                const isConfirmed = b.status === "confirmed";
+                const isDone = b.status === "completed";
+                const isCompleted = isDone || isConfirmed;
+                const hasModPending = b.modStatus === "pending";
+                const canRateListing = isDone && !doneReviews[`${b.id}_listing`];
+                const canRateHost = isDone && !doneReviews[`${b.id}_host`];
+                const badgeBg = isPending ? "#fef7f0" : isRejected ? "#fef2f2" : isActive ? "#e8f5ff" : "#e8f5e8";
+                const badgeColor = isPending ? "#c76d00" : isRejected ? "#b91c1c" : isActive ? "#5b21b6" : "#008A05";
+                const badgeText = isPending ? "Pendiente" : isRejected ? "Rechazada" : isActive ? "En curso" : isDone ? "Completada" : "Confirmada";
                 return (
                   <div key={b.id} style={{ background: isPending ? "#fffbeb" : "#f7f7f7", borderRadius: 16, border: isPending ? "1px solid #f59e0b33" : "none", overflow: "hidden" }}>
                     <div style={{ display: "flex", gap: 16, padding: 20, alignItems: "center" }}>
@@ -1440,6 +1556,47 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                       </div>
                     </div>
                     <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                      {/* Check-in: available for confirmed bookings */}
+                      {isConfirmed && !b.checkedInAt && (
+                        <Btn primary onClick={() => handleCheckIn(b)} style={{ width: "100%" }}>
+                          <Check size={16} /> Hacer Check-in
+                        </Btn>
+                      )}
+                      {/* Check-out + modification banner: only for active bookings */}
+                      {isActive && (
+                        <>
+                          {b.checkedInAt && (
+                            <div style={{ fontSize: 12, color: "#555", display: "flex", alignItems: "center", gap: 5 }}>
+                              <Clock size={13} /> Check-in: {new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          )}
+                          {/* Modification proposal from host */}
+                          {hasModPending && (
+                            <div style={{ background: "#fffbeb", border: "1px solid #f59e0b55", borderRadius: 10, padding: 12 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e", marginBottom: 6 }}>
+                                {b.modType === 'extension' ? '⏰ El anfitrión propone extender tu estadía' : '⏱ El anfitrión propone reducir tu estadía'}
+                              </div>
+                              <div style={{ fontSize: 12, color: "#555", marginBottom: 10 }}>
+                                {b.priceUnit === "hora"
+                                  ? `Nueva hora de salida: ${b.modEndTime}`
+                                  : `Nueva fecha de salida: ${b.modEndDate}`}
+                                {b.modType === 'extension'
+                                  ? ` — Adicional: ${formatCLP((b.modNewTotal || 0) - (b.total || 0))}`
+                                  : ` — Crédito: ${formatCLP((b.total || 0) - (b.modNewTotal || 0))}`}
+                              </div>
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <Btn primary onClick={() => handleRespondMod(b, true)} style={{ flex: 1 }}><Check size={14} /> Aceptar</Btn>
+                                <Btn outline onClick={() => handleRespondMod(b, false)} style={{ flex: 1, color: "#b91c1c", borderColor: "#fca5a5" }}><X size={14} /> Rechazar</Btn>
+                              </div>
+                            </div>
+                          )}
+                          {!hasModPending && (
+                            <Btn outline onClick={() => handleCheckOut(b)} style={{ width: "100%", color: "#5b21b6", borderColor: "#8b5cf655" }}>
+                              <X size={16} /> Hacer Check-out
+                            </Btn>
+                          )}
+                        </>
+                      )}
                       <Btn outline onClick={() => setChatBooking(b)} style={{ width: "100%" }}><MessageCircle size={16} /> Chat con anfitrión</Btn>
                       {(canRateListing || canRateHost) && (
                         <div style={{ display: "flex", gap: 8 }}>
@@ -1467,6 +1624,72 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
       {tab === "settings" && (
         <SettingsPanel user={user} onUpdateUser={onUpdateUser} onLogout={onLogout} />
       )}
+
+      {/* Modification proposal modal (host) */}
+      {modModal && (() => {
+        const b = modModal;
+        const isHourly = b.priceUnit === "hora";
+        const currentEnd = isHourly ? b.endTime : b.endDate;
+        let diffAmount = 0;
+        let modType = null;
+        if (isHourly && modEndTime && b.endDate) {
+          const cur = new Date(`${b.endDate}T${b.endTime}`);
+          const nw  = new Date(`${b.endDate}T${modEndTime}`);
+          const diffMs = nw.getTime() - cur.getTime();
+          diffAmount = Math.round((diffMs / (1000 * 60 * 60)) * (b.price || 0));
+          modType = diffMs > 0 ? 'extension' : diffMs < 0 ? 'reduction' : null;
+        } else if (!isHourly && modEndDate && b.endDate) {
+          const cur = new Date(`${b.endDate}T23:59:59`);
+          const nw  = new Date(`${modEndDate}T23:59:59`);
+          const diffMs = nw.getTime() - cur.getTime();
+          const rate = b.priceUnit === "día" ? (b.price || 0) : (b.monthlyInstallment || b.price || 0) / 30;
+          diffAmount = Math.round((diffMs / (1000 * 60 * 60 * 24)) * rate);
+          modType = diffMs > 0 ? 'extension' : diffMs < 0 ? 'reduction' : null;
+        }
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }} onClick={() => setModModal(null)}>
+            <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 420, padding: 24 }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 700 }}>Proponer cambio de estadía</h3>
+                <button onClick={() => setModModal(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>
+              </div>
+              <div style={{ fontSize: 13, color: "#555", marginBottom: 16, padding: "10px 14px", background: "#f7f7f7", borderRadius: 10 }}>
+                <span style={{ fontWeight: 600 }}>Conductor: </span>{b.conductorName}<br />
+                <span style={{ fontWeight: 600 }}>Fin actual: </span>{isHourly ? `${b.endDate} a las ${b.endTime}` : b.endDate}
+              </div>
+              {isHourly ? (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Nueva hora de fin</label>
+                  <Input type="time" value={modEndTime} onChange={e => setModEndTime(e.target.value)} />
+                </div>
+              ) : (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Nueva fecha de fin</label>
+                  <Input type="date" value={modEndDate} onChange={e => setModEndDate(e.target.value)} min={b.startDate || ""} />
+                </div>
+              )}
+              {modType && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: modType === 'extension' ? "#fef7f0" : "#f0fdf4", border: `1px solid ${modType === 'extension' ? "#f59e0b44" : "#86efac44"}` }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: modType === 'extension' ? "#c76d00" : "#008A05" }}>
+                    {modType === 'extension'
+                      ? `Extensión — el conductor deberá pagar ${formatCLP(Math.abs(diffAmount))} adicional`
+                      : `Reducción — se acreditará ${formatCLP(Math.abs(diffAmount))} al conductor`}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#777", marginTop: 3 }}>
+                    {modType === 'reduction' ? "El crédito se aplica para su próxima reserva." : "El cobro se agrega a su saldo pendiente."}
+                  </div>
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 12 }}>
+                <Btn outline onClick={() => setModModal(null)} style={{ flex: 1 }}>Cancelar</Btn>
+                <Btn primary onClick={handleProposeMod} disabled={modSubmitting || (!modEndTime && !modEndDate) || !modType} style={{ flex: 1 }}>
+                  {modSubmitting ? "Enviando…" : "Enviar propuesta"}
+                </Btn>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Review modal */}
       <ReviewModal
