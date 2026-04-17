@@ -145,7 +145,18 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, listings = [], s
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const [bookingDates, setBookingDates] = useState({ start: "", end: "" });
-  const [bookingHours, setBookingHours] = useState({ startH: "08", startM: "00", endH: "10", endM: "00", arrivalH: "08", arrivalM: "00" });
+  const [hourlyMode, setHourlyMode] = useState("same_day"); // "same_day" | "overnight"
+  const [bookingHours, setBookingHours] = useState(() => {
+    // Default start = current time rounded up to nearest 15 min; end = start + 2 h
+    const now = new Date();
+    const rawM = now.getMinutes();
+    const roundedM = Math.ceil(rawM / 15) * 15;
+    const sh = roundedM >= 60 ? (now.getHours() + 1) % 24 : now.getHours();
+    const sm = roundedM >= 60 ? 0 : roundedM;
+    const eh = (sh + 2) % 24;
+    const pad = n => String(n).padStart(2, "0");
+    return { startH: pad(sh), startM: pad(sm), endH: pad(eh), endM: pad(sm), arrivalH: pad(sh), arrivalM: pad(sm) };
+  });
   const [monthlyStartDate, setMonthlyStartDate] = useState("");
   const [monthlyEndMonth, setMonthlyEndMonth] = useState("");
   const [showAllAmenities, setShowAllAmenities] = useState(false);
@@ -866,16 +877,38 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, listings = [], s
                         <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingBottom: 4 }}>
                           {modUnit === "hora" && (
                             <>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                                <div>
-                                  <label style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 6, display: "block" }}>Fecha de entrada</label>
-                                  <input type="date" value={bookingDates.start} onChange={e => setBookingDates({ ...bookingDates, start: e.target.value })} style={{ width: "100%", padding: "11px 14px", borderRadius: 12, border: "1px solid #ddd", fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#222", outline: "none", boxSizing: "border-box", transition: "border .2s" }} onFocus={e => e.target.style.borderColor = BRAND_COLOR} onBlur={e => e.target.style.borderColor = "#ddd"} />
-                                </div>
-                                <div>
-                                  <label style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 6, display: "block" }}>Fecha de salida</label>
-                                  <input type="date" value={bookingDates.end} onChange={e => setBookingDates({ ...bookingDates, end: e.target.value })} style={{ width: "100%", padding: "11px 14px", borderRadius: 12, border: "1px solid #ddd", fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#222", outline: "none", boxSizing: "border-box", transition: "border .2s" }} onFocus={e => e.target.style.borderColor = BRAND_COLOR} onBlur={e => e.target.style.borderColor = "#ddd"} />
-                                </div>
+                              {/* Toggle: same day vs overnight */}
+                              <div style={{ display: "flex", gap: 8 }}>
+                                {[{ id: "same_day", label: "Mismo día" }, { id: "overnight", label: "Pasa la medianoche" }].map(opt => (
+                                  <button key={opt.id} type="button"
+                                    onClick={() => {
+                                      setHourlyMode(opt.id);
+                                      if (opt.id === "same_day" && bookingDates.start)
+                                        setBookingDates(prev => ({ ...prev, end: prev.start }));
+                                    }}
+                                    style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: `2px solid ${hourlyMode === opt.id ? BRAND_COLOR : "#e0e0e0"}`, background: hourlyMode === opt.id ? BRAND_COLOR : "#fff", color: hourlyMode === opt.id ? "#fff" : "#666", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit", transition: "all .15s" }}
+                                  >{opt.label}</button>
+                                ))}
                               </div>
+                              {/* Date input(s) */}
+                              {hourlyMode === "same_day" ? (
+                                <div>
+                                  <label style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 6, display: "block" }}>Fecha</label>
+                                  <input type="date" value={bookingDates.start} onChange={e => setBookingDates({ start: e.target.value, end: e.target.value })} style={{ width: "100%", padding: "11px 14px", borderRadius: 12, border: "1px solid #ddd", fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#222", outline: "none", boxSizing: "border-box", transition: "border .2s" }} onFocus={e => e.target.style.borderColor = BRAND_COLOR} onBlur={e => e.target.style.borderColor = "#ddd"} />
+                                </div>
+                              ) : (
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                                  <div>
+                                    <label style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 6, display: "block" }}>Fecha entrada</label>
+                                    <input type="date" value={bookingDates.start} onChange={e => setBookingDates({ ...bookingDates, start: e.target.value })} style={{ width: "100%", padding: "11px 14px", borderRadius: 12, border: "1px solid #ddd", fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#222", outline: "none", boxSizing: "border-box", transition: "border .2s" }} onFocus={e => e.target.style.borderColor = BRAND_COLOR} onBlur={e => e.target.style.borderColor = "#ddd"} />
+                                  </div>
+                                  <div>
+                                    <label style={{ fontSize: 13, fontWeight: 600, color: "#555", marginBottom: 6, display: "block" }}>Fecha salida</label>
+                                    <input type="date" value={bookingDates.end} onChange={e => setBookingDates({ ...bookingDates, end: e.target.value })} style={{ width: "100%", padding: "11px 14px", borderRadius: 12, border: "1px solid #ddd", fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#222", outline: "none", boxSizing: "border-box", transition: "border .2s" }} onFocus={e => e.target.style.borderColor = BRAND_COLOR} onBlur={e => e.target.style.borderColor = "#ddd"} />
+                                  </div>
+                                </div>
+                              )}
+                              {/* Time pickers */}
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                                 <TimePicker label="Hora inicio" value={`${bookingHours.startH}:${bookingHours.startM}`} onChange={v => { const [h, m] = v.split(":"); setBookingHours({ ...bookingHours, startH: h, startM: m }); }} disabledHours={busyHoursForStart} />
                                 <TimePicker label="Hora fin" value={`${bookingHours.endH}:${bookingHours.endM}`} onChange={v => { const [h, m] = v.split(":"); setBookingHours({ ...bookingHours, endH: h, endM: m }); }} disabledHours={busyHoursForEnd} />
