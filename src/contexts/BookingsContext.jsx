@@ -223,7 +223,7 @@ export function BookingsProvider({ children }) {
   const proposeModification = async (bookingId, { modEndDate, modEndTime, modNewTotal, modType }) => {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) throw new Error("Reserva no encontrada");
-    if (booking.status !== "active") throw new Error("Solo puedes modificar reservas activas");
+    if (booking.status !== "active" && booking.status !== "confirmed") throw new Error("Solo puedes modificar reservas confirmadas o activas");
 
     const { data: saved, error } = await supabase
       .from('bookings')

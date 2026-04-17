@@ -761,22 +761,24 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                         <AlertCircle size={14} /> Pago no recibido — deuda aplicada al conductor: {formatCLP(bookingTotal + Math.round(bookingTotal * 0.3))} (total + 30%)
                       </div>
                     )}
-                    {isActive && (
-                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #eee" }}>
-                        <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                          <Clock size={14} /> Conductor en tu espacio desde las {b.checkedInAt ? new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }) : "—"}
-                        </div>
+                    {isActive && b.checkedInAt && (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #eee", fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                        <Clock size={14} /> Conductor en tu espacio desde las {new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    )}
+                    {(isConfirmed || isActive) && (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: isActive && b.checkedInAt ? "none" : "1px solid #eee" }}>
                         {!b.modStatus || b.modStatus === 'rejected' ? (
                           <Btn outline onClick={() => { setModModal(b); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
-                            Proponer cambio de estadía
+                            Extender / reducir estadía
                           </Btn>
                         ) : b.modStatus === 'pending' ? (
                           <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                             <AlertCircle size={14} /> Esperando respuesta del conductor…
                           </div>
                         ) : b.modStatus === 'approved' ? (
-                          <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <CheckCircle size={14} /> Modificación aceptada por el conductor
+                          <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                            <CheckCircle size={14} /> Modificación aceptada
                           </div>
                         ) : null}
                       </div>
