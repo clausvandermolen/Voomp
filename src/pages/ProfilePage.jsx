@@ -74,11 +74,20 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   const [previewListing, setPreviewListing] = useState(null);
   const [tab, setTab] = useState(initialTab || "profile");
   useEffect(() => { if (initialTab && initialTab !== tab) setTab(initialTab); }, [initialTab]);
-  // Keep URL in sync with active tab (no React Router navigation, just replaceState)
+  // Keep URL in sync with active tab/subTab (no React Router navigation, just replaceState)
   useEffect(() => {
-    const path = tab === "profile" ? "/profile" : `/profile/${tab}`;
+    let path;
+    if (tab === "profile") {
+      path = "/profile";
+    } else if (tab === "dashboard") {
+      path = dashboardSubTab && dashboardSubTab !== "listings"
+        ? `/profile/dashboard/${dashboardSubTab}`
+        : "/profile/dashboard";
+    } else {
+      path = `/profile/${tab}`;
+    }
     if (window.location.pathname !== path) window.history.replaceState(null, '', path);
-  }, [tab]);
+  }, [tab, dashboardSubTab]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(user || {});
   // My Vehicles
