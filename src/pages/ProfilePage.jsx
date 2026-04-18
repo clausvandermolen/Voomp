@@ -238,7 +238,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   const handleCheckIn = async (b) => {
     try {
       await checkIn(b.id);
-      pushNotification({ userId: b.hostId, type: 'booking', title: 'El conductor hizo check-in', body: `${b.conductorName || 'El conductor'} llegó a tu espacio en ${b.listingTitle}.`, link: 'profile' });
+      pushNotification({ userId: b.hostId, type: 'booking', title: 'El conductor hizo check-in', body: `${b.conductorName || 'El conductor'} llegó a tu espacio en ${b.listingTitle}.`, link: 'profile/dashboard/incoming' });
     } catch(e) { alert(e.message || "Error al hacer check-in"); }
   };
 
@@ -246,7 +246,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
     if (!window.confirm("¿Confirmas que estás saliendo del estacionamiento?")) return;
     try {
       const { enriched, creditAdjustment } = await checkOut(b.id);
-      pushNotification({ userId: enriched.hostId, type: 'booking', title: 'El conductor hizo check-out', body: `${b.conductorName || 'El conductor'} salió de tu espacio en ${b.listingTitle}.`, link: 'profile' });
+      pushNotification({ userId: enriched.hostId, type: 'booking', title: 'El conductor hizo check-out', body: `${b.conductorName || 'El conductor'} salió de tu espacio en ${b.listingTitle}.`, link: 'profile/dashboard/incoming' });
       if (creditAdjustment < 0) {
         const credit = Math.abs(creditAdjustment);
         alert(`Check-out registrado. Se acreditaron $${credit.toLocaleString("es-CL")} a tu cuenta por salida anticipada (70% del tiempo no usado).`);
@@ -263,7 +263,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
         userId: b.hostId, type: 'booking',
         title: accept ? 'Modificación aceptada' : 'Modificación rechazada',
         body: accept ? `El conductor aceptó el cambio de estadía en ${b.listingTitle}.` : `El conductor rechazó el cambio de estadía en ${b.listingTitle}.`,
-        link: 'profile',
+        link: 'profile/dashboard/incoming',
       });
     } catch(e) { alert(e.message || "Error al responder la modificación"); }
   };
@@ -312,7 +312,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
         body: modType === 'extension'
           ? `Nuevo fin: ${newEndLabel} — Deberás pagar $${Math.abs(diffAmount).toLocaleString("es-CL")} adicional si aceptas.`
           : `Nuevo fin: ${newEndLabel} — Recibirás $${Math.abs(diffAmount).toLocaleString("es-CL")} de crédito si aceptas.`,
-        link: 'bookings',
+        link: 'profile/bookings',
       });
       setModModal(null); setModEndDate(""); setModEndTime("");
     } catch(e) { alert(e.message || "Error al proponer modificación"); }
@@ -666,10 +666,10 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                 const handleApprove = async () => {
                   try {
                     if (onUpdateBooking) await onUpdateBooking(b.id, { status: "confirmed", approved_at: new Date().toISOString() });
-                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Reserva aprobada', body: `Tu reserva en ${b.listingTitle} fue aprobada por el anfitrión.`, link: 'bookings' });
+                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Reserva aprobada', body: `Tu reserva en ${b.listingTitle} fue aprobada por el anfitrión.`, link: 'profile/bookings' });
                     // Second notification to host: request cash payment confirmation
                     if (b.payMethod === "efectivo" && b.hostId) {
-                      pushNotification({ userId: b.hostId, type: 'booking', title: 'Confirma la recepción del pago en efectivo', body: `Cuando recibas el pago de ${b.conductorName || 'el conductor'} por ${b.listingTitle}, confírmalo desde tu panel.`, link: 'profile' });
+                      pushNotification({ userId: b.hostId, type: 'booking', title: 'Confirma la recepción del pago en efectivo', body: `Cuando recibas el pago de ${b.conductorName || 'el conductor'} por ${b.listingTitle}, confírmalo desde tu panel.`, link: 'profile/dashboard/incoming' });
                     }
                   } catch(e) { alert("Error al aprobar la reserva."); }
                 };
@@ -677,7 +677,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                   if (!window.confirm("¿Rechazar esta solicitud de reserva?")) return;
                   try {
                     if (onUpdateBooking) await onUpdateBooking(b.id, { status: "rejected", rejected_at: new Date().toISOString() });
-                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Reserva rechazada', body: `Tu solicitud para ${b.listingTitle} fue rechazada.`, link: 'bookings' });
+                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Reserva rechazada', body: `Tu solicitud para ${b.listingTitle} fue rechazada.`, link: 'profile/bookings' });
                   } catch(e) { alert("Error al rechazar la reserva."); }
                 };
                 const isCash = b.payMethod === "efectivo";
@@ -689,7 +689,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                   if (!window.confirm(`¿Confirmas haber recibido ${formatCLP(bookingTotal)} en efectivo del conductor?`)) return;
                   try {
                     if (onUpdateBooking) await onUpdateBooking(b.id, { status: "completed" });
-                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Pago en efectivo confirmado', body: `${b.hostName || 'El anfitrión'} confirmó haber recibido el pago de ${b.listingTitle}.`, link: 'bookings' });
+                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Pago en efectivo confirmado', body: `${b.hostName || 'El anfitrión'} confirmó haber recibido el pago de ${b.listingTitle}.`, link: 'profile/bookings' });
                   } catch(e) { alert("Error al confirmar el pago."); }
                 };
                 const handleCashUnpaid = async () => {
@@ -701,7 +701,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                     // The on_booking_cash_unpaid DB trigger applies (total + 30%) to
                     // the conductor's profiles.credit server-side, bypassing RLS.
                     if (onUpdateBooking) await onUpdateBooking(b.id, { status: "cash_unpaid" });
-                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Pago pendiente — multa aplicada', body: `${b.hostName || 'El anfitrión'} reportó no haber recibido el pago de ${b.listingTitle}. Se agregó ${formatCLP(totalDebt)} a tu saldo pendiente.`, link: 'profile' });
+                    pushNotification({ userId: b.conductorId, type: 'booking', title: 'Pago pendiente — multa aplicada', body: `${b.hostName || 'El anfitrión'} reportó no haber recibido el pago de ${b.listingTitle}. Se agregó ${formatCLP(totalDebt)} a tu saldo pendiente.`, link: 'profile/bookings' });
                   } catch(e) { console.error(e); alert("Error al marcar como no pagado."); }
                 };
                 return (
@@ -767,7 +767,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                         {isConfirmed && !b.checkedInAt && (
                           <Btn primary onClick={async () => {
                             if (!window.confirm(`¿Registrar la llegada de ${b.conductorName || 'el conductor'}?`)) return;
-                            try { await checkIn(b.id); pushNotification({ userId: b.conductorId, type: 'booking', title: 'Check-in registrado', body: `El anfitrión registró tu llegada en ${b.listingTitle}.`, link: 'bookings' }); }
+                            try { await checkIn(b.id); pushNotification({ userId: b.conductorId, type: 'booking', title: 'Check-in registrado', body: `El anfitrión registró tu llegada en ${b.listingTitle}.`, link: 'profile/bookings' }); }
                             catch(e) { alert(e.message || 'Error al registrar llegada'); }
                           }} style={{ width: "100%" }}>
                             <Check size={16} /> Registrar llegada del conductor
@@ -783,7 +783,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                             if (!window.confirm(`¿Registrar la salida de ${b.conductorName || 'el conductor'}?`)) return;
                             try {
                               const { enriched, creditAdjustment } = await checkOut(b.id);
-                              pushNotification({ userId: enriched.conductorId, type: 'booking', title: 'Check-out registrado', body: `El anfitrión registró tu salida de ${b.listingTitle}.`, link: 'bookings' });
+                              pushNotification({ userId: enriched.conductorId, type: 'booking', title: 'Check-out registrado', body: `El anfitrión registró tu salida de ${b.listingTitle}.`, link: 'profile/bookings' });
                               if (creditAdjustment < 0) alert(`Salida registrada. Se acreditaron ${formatCLP(Math.abs(creditAdjustment))} al conductor por tiempo no usado.`);
                             }
                             catch(e) { alert(e.message || 'Error al registrar salida'); }
@@ -791,12 +791,10 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                             <X size={16} /> Registrar salida del conductor
                           </Btn>
                         )}
-                        {/* Extend / reduce stay */}
-                        {(!b.modStatus || b.modStatus === 'rejected') && (
-                          <Btn outline onClick={() => { setModModal(b); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
-                            Extender / reducir estadía
-                          </Btn>
-                        )}
+                        {/* Extend / reduce stay — always available while booking is live */}
+                        <Btn outline onClick={() => { setModModal(b); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
+                          Extender / reducir estadía
+                        </Btn>
                         {b.modStatus === 'pending' && (
                           <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                             <AlertCircle size={14} /> Modificación enviada — esperando respuesta del conductor…
@@ -804,12 +802,12 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                         )}
                         {b.modStatus === 'approved' && (
                           <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <CheckCircle size={14} /> Modificación aceptada por el conductor
+                            <CheckCircle size={14} /> Última modificación aceptada
                           </div>
                         )}
                         {b.modStatus === 'rejected' && (
                           <div style={{ fontSize: 12, color: "#b91c1c", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <AlertCircle size={14} /> El conductor rechazó la modificación
+                            <AlertCircle size={14} /> El conductor rechazó la última modificación
                           </div>
                         )}
                       </div>
@@ -1603,38 +1601,38 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                       </div>
                     </div>
                     <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-                      {/* Check-in: available for confirmed bookings */}
-                      {isConfirmed && !b.checkedInAt && (
+                      {/* Modification proposal from host — visible for confirmed AND active */}
+                      {(isConfirmed || isActive) && hasModPending && (
+                        <div style={{ background: "#fffbeb", border: "1px solid #f59e0b55", borderRadius: 10, padding: 12 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e", marginBottom: 6 }}>
+                            {b.modType === 'extension' ? '⏰ El anfitrión propone extender tu estadía' : '⏱ El anfitrión propone reducir tu estadía'}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#555", marginBottom: 10 }}>
+                            {b.priceUnit === "hora"
+                              ? `Nueva hora de salida: ${b.modEndTime}`
+                              : `Nueva fecha de salida: ${b.modEndDate}`}
+                            {b.modType === 'extension'
+                              ? ` — Adicional: ${formatCLP((b.modNewTotal || 0) - (b.total || 0))}`
+                              : ` — Crédito: ${formatCLP((b.total || 0) - (b.modNewTotal || 0))}`}
+                          </div>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <Btn primary onClick={() => handleRespondMod(b, true)} style={{ flex: 1 }}><Check size={14} /> Aceptar</Btn>
+                            <Btn outline onClick={() => handleRespondMod(b, false)} style={{ flex: 1, color: "#b91c1c", borderColor: "#fca5a5" }}><X size={14} /> Rechazar</Btn>
+                          </div>
+                        </div>
+                      )}
+                      {/* Check-in: confirmed bookings without pending mod */}
+                      {isConfirmed && !b.checkedInAt && !hasModPending && (
                         <Btn primary onClick={() => handleCheckIn(b)} style={{ width: "100%" }}>
                           <Check size={16} /> Hacer Check-in
                         </Btn>
                       )}
-                      {/* Check-out + modification banner: only for active bookings */}
+                      {/* Check-in time + check-out for active bookings */}
                       {isActive && (
                         <>
                           {b.checkedInAt && (
                             <div style={{ fontSize: 12, color: "#555", display: "flex", alignItems: "center", gap: 5 }}>
                               <Clock size={13} /> Check-in: {new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
-                            </div>
-                          )}
-                          {/* Modification proposal from host */}
-                          {hasModPending && (
-                            <div style={{ background: "#fffbeb", border: "1px solid #f59e0b55", borderRadius: 10, padding: 12 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e", marginBottom: 6 }}>
-                                {b.modType === 'extension' ? '⏰ El anfitrión propone extender tu estadía' : '⏱ El anfitrión propone reducir tu estadía'}
-                              </div>
-                              <div style={{ fontSize: 12, color: "#555", marginBottom: 10 }}>
-                                {b.priceUnit === "hora"
-                                  ? `Nueva hora de salida: ${b.modEndTime}`
-                                  : `Nueva fecha de salida: ${b.modEndDate}`}
-                                {b.modType === 'extension'
-                                  ? ` — Adicional: ${formatCLP((b.modNewTotal || 0) - (b.total || 0))}`
-                                  : ` — Crédito: ${formatCLP((b.total || 0) - (b.modNewTotal || 0))}`}
-                              </div>
-                              <div style={{ display: "flex", gap: 8 }}>
-                                <Btn primary onClick={() => handleRespondMod(b, true)} style={{ flex: 1 }}><Check size={14} /> Aceptar</Btn>
-                                <Btn outline onClick={() => handleRespondMod(b, false)} style={{ flex: 1, color: "#b91c1c", borderColor: "#fca5a5" }}><X size={14} /> Rechazar</Btn>
-                              </div>
                             </div>
                           )}
                           {!hasModPending && (

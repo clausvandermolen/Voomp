@@ -231,7 +231,7 @@ export default function App() {
         type: 'booking',
         title: 'Reserva recibida',
         body: `Tu solicitud para ${bookingData.listing_title || 'el espacio'} fue enviada y espera aprobación.`,
-        link: 'bookings',
+        link: 'profile/bookings',
       });
     }
     return result;
