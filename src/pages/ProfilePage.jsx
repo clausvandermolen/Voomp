@@ -761,26 +761,57 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                         <AlertCircle size={14} /> Pago no recibido — deuda aplicada al conductor: {formatCLP(bookingTotal + Math.round(bookingTotal * 0.3))} (total + 30%)
                       </div>
                     )}
-                    {isActive && b.checkedInAt && (
-                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #eee", fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                        <Clock size={14} /> Conductor en tu espacio desde las {new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                    )}
                     {(isConfirmed || isActive) && (
-                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: isActive && b.checkedInAt ? "none" : "1px solid #eee" }}>
-                        {!b.modStatus || b.modStatus === 'rejected' ? (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #eee", display: "flex", flexDirection: "column", gap: 8 }}>
+                        {/* Check-in / check-out — host can register arrival and departure */}
+                        {isConfirmed && !b.checkedInAt && (
+                          <Btn primary onClick={async () => {
+                            if (!window.confirm(`¿Registrar la llegada de ${b.conductorName || 'el conductor'}?`)) return;
+                            try { await checkIn(b.id); pushNotification({ userId: b.conductorId, type: 'booking', title: 'Check-in registrado', body: `El anfitrión registró tu llegada en ${b.listingTitle}.`, link: 'bookings' }); }
+                            catch(e) { alert(e.message || 'Error al registrar llegada'); }
+                          }} style={{ width: "100%" }}>
+                            <Check size={16} /> Registrar llegada del conductor
+                          </Btn>
+                        )}
+                        {isActive && b.checkedInAt && (
+                          <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <Clock size={14} /> En tu espacio desde las {new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        )}
+                        {isActive && !b.checkedOutAt && (
+                          <Btn outline onClick={async () => {
+                            if (!window.confirm(`¿Registrar la salida de ${b.conductorName || 'el conductor'}?`)) return;
+                            try {
+                              const { enriched, creditAdjustment } = await checkOut(b.id);
+                              pushNotification({ userId: enriched.conductorId, type: 'booking', title: 'Check-out registrado', body: `El anfitrión registró tu salida de ${b.listingTitle}.`, link: 'bookings' });
+                              if (creditAdjustment < 0) alert(`Salida registrada. Se acreditaron ${formatCLP(Math.abs(creditAdjustment))} al conductor por tiempo no usado.`);
+                            }
+                            catch(e) { alert(e.message || 'Error al registrar salida'); }
+                          }} style={{ width: "100%", color: "#5b21b6", borderColor: "#8b5cf655" }}>
+                            <X size={16} /> Registrar salida del conductor
+                          </Btn>
+                        )}
+                        {/* Extend / reduce stay */}
+                        {(!b.modStatus || b.modStatus === 'rejected') && (
                           <Btn outline onClick={() => { setModModal(b); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
                             Extender / reducir estadía
                           </Btn>
-                        ) : b.modStatus === 'pending' ? (
+                        )}
+                        {b.modStatus === 'pending' && (
                           <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <AlertCircle size={14} /> Esperando respuesta del conductor…
+                            <AlertCircle size={14} /> Modificación enviada — esperando respuesta del conductor…
                           </div>
-                        ) : b.modStatus === 'approved' ? (
-                          <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                            <CheckCircle size={14} /> Modificación aceptada
+                        )}
+                        {b.modStatus === 'approved' && (
+                          <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <CheckCircle size={14} /> Modificación aceptada por el conductor
                           </div>
-                        ) : null}
+                        )}
+                        {b.modStatus === 'rejected' && (
+                          <div style={{ fontSize: 12, color: "#b91c1c", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <AlertCircle size={14} /> El conductor rechazó la modificación
+                          </div>
+                        )}
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: isPending ? 8 : 12, paddingTop: isPending ? 0 : 12, borderTop: isPending ? "none" : "1px solid #eee" }}>
