@@ -711,7 +711,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                 const handleConfirmCash = async () => {
                   if (!window.confirm(`¿Confirmas haber recibido ${formatCLP(bookingTotal)} en efectivo del conductor?`)) return;
                   try {
-                    if (onUpdateBooking) await onUpdateBooking(b.id, { status: "completed" });
+                    if (onUpdateBooking) await onUpdateBooking(b.id, { status: "active", checked_in_at: new Date().toISOString() });
                     pushNotification({ userId: b.conductorId, type: 'booking', title: 'Pago en efectivo confirmado', body: `${b.hostName || 'El anfitrión'} confirmó haber recibido el pago de ${b.listingTitle}.`, link: 'profile/bookings' });
                   } catch(e) { alert("Error al confirmar el pago."); }
                 };
@@ -799,7 +799,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                         )}
                         {isActive && b.checkedInAt && (
                           <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <Clock size={14} /> En tu espacio desde las {new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                            {isCash ? <><CheckCircle size={14} /> Pago en efectivo confirmado · En curso</> : <><Clock size={14} /> En tu espacio desde las {new Date(b.checkedInAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}</>}
                           </div>
                         )}
                         {isActive && !b.checkedOutAt && (

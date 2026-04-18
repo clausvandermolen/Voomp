@@ -118,6 +118,7 @@ export function BookingsProvider({ children }) {
   const HOST_ALLOWED_FIELDS = new Set([
     "status", "approved_at", "rejected_at", "rejection_reason", "host_notes", "updated_at",
     "mod_end_date", "mod_end_time", "mod_new_total", "mod_status", "mod_proposed_at", "mod_type",
+    "checked_in_at",
   ]);
   const CONDUCTOR_ALLOWED_FIELDS = new Set([
     "vehicle_name", "vehicle_plate", "start_time", "end_time", "start_date", "end_date", "updated_at",
