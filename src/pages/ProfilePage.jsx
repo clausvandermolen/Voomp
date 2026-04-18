@@ -61,6 +61,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   }, []);
   const [chatBooking, setChatBooking] = useState(null);
   const [modModal, setModModal] = useState(null);
+  const [modProposedBy, setModProposedBy] = useState('host');
   const [modEndDate, setModEndDate] = useState("");
   const [modEndTime, setModEndTime] = useState("");
   const [modSubmitting, setModSubmitting] = useState(false);
@@ -268,15 +269,19 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   };
 
   const handleRespondMod = async (b, accept) => {
-    const action = accept ? "aceptar" : "rechazar";
-    if (!window.confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} la propuesta de modificación del anfitrión?`)) return;
+    const isHostResponding = b.modStatus === 'pending_host_approval';
+    const quien = isHostResponding ? "conductor" : "anfitrión";
+    if (!window.confirm(`¿${accept ? "Aceptar" : "Rechazar"} la propuesta de modificación del ${quien}?`)) return;
     try {
       await respondToModification(b.id, accept);
       pushNotification({
-        userId: b.hostId, type: 'booking',
+        userId: isHostResponding ? b.conductorId : b.hostId,
+        type: 'booking',
         title: accept ? 'Modificación aceptada' : 'Modificación rechazada',
-        body: accept ? `El conductor aceptó el cambio de estadía en ${b.listingTitle}.` : `El conductor rechazó el cambio de estadía en ${b.listingTitle}.`,
-        link: 'profile/dashboard/incoming',
+        body: accept
+          ? `Tu propuesta de cambio de estadía en ${b.listingTitle} fue aceptada.`
+          : `Tu propuesta de cambio de estadía en ${b.listingTitle} fue rechazada.`,
+        link: isHostResponding ? 'profile/bookings' : 'profile/dashboard/incoming',
       });
     } catch(e) { alert(e.message || "Error al responder la modificación"); }
   };
@@ -311,23 +316,28 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
       }
       const modNewTotal = Math.max(0, (b.total || 0) + diffAmount);
 
+      const isHost = modProposedBy === 'host';
       await proposeModification(b.id, {
         modEndDate: isHourly ? b.endDate : modEndDate,
         modEndTime: isHourly ? modEndTime : null,
         modNewTotal,
         modType,
+        proposedBy: modProposedBy,
       });
 
       const newEndLabel = isHourly ? modEndTime : modEndDate;
       pushNotification({
-        userId: b.conductorId, type: 'booking',
-        title: modType === 'extension' ? 'El anfitrión propone extender tu estadía' : 'El anfitrión propone reducir tu estadía',
+        userId: isHost ? b.conductorId : b.hostId,
+        type: 'booking',
+        title: modType === 'extension'
+          ? (isHost ? 'El anfitrión propone extender tu estadía' : 'El conductor quiere extender su estadía')
+          : (isHost ? 'El anfitrión propone reducir tu estadía' : 'El conductor quiere reducir su estadía'),
         body: modType === 'extension'
-          ? `Nuevo fin: ${newEndLabel} — Deberás pagar $${Math.abs(diffAmount).toLocaleString("es-CL")} adicional si aceptas.`
-          : `Nuevo fin: ${newEndLabel} — Recibirás $${Math.abs(diffAmount).toLocaleString("es-CL")} de crédito si aceptas.`,
-        link: 'profile/bookings',
+          ? `Nuevo fin: ${newEndLabel} — ${formatCLP(Math.abs(diffAmount))} adicional si acepta${isHost ? 's' : ''}.`
+          : `Nuevo fin: ${newEndLabel} — ${formatCLP(Math.abs(diffAmount))} de crédito si acepta${isHost ? 's' : ''}.`,
+        link: isHost ? 'profile/bookings' : 'profile/dashboard/incoming',
       });
-      setModModal(null); setModEndDate(""); setModEndTime("");
+      setModModal(null); setModEndDate(""); setModEndTime(""); setModProposedBy('host');
     } catch(e) { alert(e.message || "Error al proponer modificación"); }
     setModSubmitting(false);
   };
@@ -805,13 +815,32 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                             <X size={16} /> Registrar salida del conductor
                           </Btn>
                         )}
-                        {/* Extend / reduce stay — always available while booking is live */}
-                        <Btn outline onClick={() => { setModModal(b); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
-                          Extender / reducir estadía
-                        </Btn>
+                        {/* Extend / reduce stay — only when no pending mod */}
+                        {(!b.modStatus || b.modStatus === 'approved' || b.modStatus === 'rejected') && (
+                          <Btn outline onClick={() => { setModModal(b); setModProposedBy('host'); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
+                            Extender / reducir estadía
+                          </Btn>
+                        )}
                         {b.modStatus === 'pending' && (
                           <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                             <AlertCircle size={14} /> Modificación enviada — esperando respuesta del conductor…
+                          </div>
+                        )}
+                        {b.modStatus === 'pending_host_approval' && (
+                          <div style={{ background: "#fffbeb", border: "1px solid #f59e0b55", borderRadius: 10, padding: 12 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e", marginBottom: 6 }}>
+                              {b.modType === 'extension' ? '⏰ El conductor quiere extender su estadía' : '⏱ El conductor quiere reducir su estadía'}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#555", marginBottom: 10 }}>
+                              {b.priceUnit === "hora" ? `Nueva hora de salida: ${b.modEndTime}` : `Nueva fecha de salida: ${b.modEndDate}`}
+                              {b.modType === 'extension'
+                                ? ` — Adicional: ${formatCLP((b.modNewTotal || 0) - (b.total || 0))}`
+                                : ` — Crédito: ${formatCLP((b.total || 0) - (b.modNewTotal || 0))}`}
+                            </div>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <Btn primary onClick={() => handleRespondMod(b, true)} style={{ flex: 1 }}><Check size={14} /> Aceptar</Btn>
+                              <Btn outline onClick={() => handleRespondMod(b, false)} style={{ flex: 1, color: "#b91c1c", borderColor: "#fca5a5" }}><X size={14} /> Rechazar</Btn>
+                            </div>
                           </div>
                         )}
                         {b.modStatus === 'approved' && (
@@ -821,7 +850,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                         )}
                         {b.modStatus === 'rejected' && (
                           <div style={{ fontSize: 12, color: "#b91c1c", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <AlertCircle size={14} /> El conductor rechazó la última modificación
+                            <AlertCircle size={14} /> Última modificación rechazada
                           </div>
                         )}
                       </div>
@@ -1589,7 +1618,9 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                 const isConfirmed = b.status === "confirmed";
                 const isDone = b.status === "completed";
                 const isCompleted = isDone || isConfirmed;
-                const hasModPending = b.modStatus === "pending";
+                const hasHostProposedMod = b.modStatus === "pending";
+                const hasConductorProposedMod = b.modStatus === "pending_host_approval";
+                const hasModPending = hasHostProposedMod || hasConductorProposedMod;
                 const canRateListing = isDone && !doneReviews[`${b.id}_listing`];
                 const canRateHost = isDone && !doneReviews[`${b.id}_host`];
                 const badgeBg = isPending ? "#fef7f0" : isRejected ? "#fef2f2" : isActive ? "#e8f5ff" : "#e8f5e8";
@@ -1616,8 +1647,8 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                       </div>
                     </div>
                     <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-                      {/* Modification proposal from host — visible for confirmed AND active */}
-                      {(isConfirmed || isActive) && hasModPending && (
+                      {/* Host proposed modification — conductor responds */}
+                      {(isConfirmed || isActive) && hasHostProposedMod && (
                         <div style={{ background: "#fffbeb", border: "1px solid #f59e0b55", borderRadius: 10, padding: 12 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e", marginBottom: 6 }}>
                             {b.modType === 'extension' ? '⏰ El anfitrión propone extender tu estadía' : '⏱ El anfitrión propone reducir tu estadía'}
@@ -1634,6 +1665,28 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                             <Btn primary onClick={() => handleRespondMod(b, true)} style={{ flex: 1 }}><Check size={14} /> Aceptar</Btn>
                             <Btn outline onClick={() => handleRespondMod(b, false)} style={{ flex: 1, color: "#b91c1c", borderColor: "#fca5a5" }}><X size={14} /> Rechazar</Btn>
                           </div>
+                        </div>
+                      )}
+                      {/* Conductor proposed modification — waiting for host */}
+                      {(isConfirmed || isActive) && hasConductorProposedMod && (
+                        <div style={{ fontSize: 12, color: "#92400e", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                          <AlertCircle size={14} /> Solicitud de cambio enviada — esperando respuesta del anfitrión…
+                        </div>
+                      )}
+                      {/* Extend / reduce button — only when no pending mod */}
+                      {(isConfirmed || isActive) && !hasModPending && (
+                        <Btn outline onClick={() => { setModModal(b); setModProposedBy('conductor'); setModEndDate(b.endDate || ""); setModEndTime(b.endTime || ""); }} style={{ width: "100%" }}>
+                          Extender / reducir estadía
+                        </Btn>
+                      )}
+                      {(isConfirmed || isActive) && b.modStatus === 'approved' && (
+                        <div style={{ fontSize: 12, color: "#008A05", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                          <CheckCircle size={14} /> Última modificación aceptada
+                        </div>
+                      )}
+                      {(isConfirmed || isActive) && b.modStatus === 'rejected' && (
+                        <div style={{ fontSize: 12, color: "#b91c1c", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                          <AlertCircle size={14} /> Última modificación rechazada
                         </div>
                       )}
                       {/* Check-in: confirmed bookings without pending mod */}
@@ -1685,11 +1738,11 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
         <SettingsPanel user={user} onUpdateUser={onUpdateUser} onLogout={onLogout} />
       )}
 
-      {/* Modification proposal modal (host) */}
+      {/* Modification modal — host proposes or conductor requests */}
       {modModal && (() => {
         const b = modModal;
         const isHourly = b.priceUnit === "hora";
-        const currentEnd = isHourly ? b.endTime : b.endDate;
+        const isConductorModal = modProposedBy === 'conductor';
         let diffAmount = 0;
         let modType = null;
         if (isHourly && modEndTime && b.endDate) {
@@ -1710,11 +1763,13 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }} onClick={() => setModModal(null)}>
             <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 420, padding: 24 }} onClick={e => e.stopPropagation()}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700 }}>Proponer cambio de estadía</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700 }}>{isConductorModal ? "Solicitar cambio de estadía" : "Proponer cambio de estadía"}</h3>
                 <button onClick={() => setModModal(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>
               </div>
               <div style={{ fontSize: 13, color: "#555", marginBottom: 16, padding: "10px 14px", background: "#f7f7f7", borderRadius: 10 }}>
-                <span style={{ fontWeight: 600 }}>Conductor: </span>{b.conductorName}<br />
+                {isConductorModal
+                  ? <><span style={{ fontWeight: 600 }}>Estacionamiento: </span>{b.listingTitle}<br /></>
+                  : <><span style={{ fontWeight: 600 }}>Conductor: </span>{b.conductorName}<br /></>}
                 <span style={{ fontWeight: 600 }}>Fin actual: </span>{isHourly ? `${b.endDate} a las ${b.endTime}` : b.endDate}
               </div>
               {isHourly ? (
@@ -1732,18 +1787,18 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                 <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: modType === 'extension' ? "#fef7f0" : "#f0fdf4", border: `1px solid ${modType === 'extension' ? "#f59e0b44" : "#86efac44"}` }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: modType === 'extension' ? "#c76d00" : "#008A05" }}>
                     {modType === 'extension'
-                      ? `Extensión — el conductor deberá pagar ${formatCLP(Math.abs(diffAmount))} adicional`
-                      : `Reducción — se acreditará ${formatCLP(Math.abs(diffAmount))} al conductor`}
+                      ? `Extensión — ${isConductorModal ? "deberás pagar" : "el conductor deberá pagar"} ${formatCLP(Math.abs(diffAmount))} adicional`
+                      : `Reducción — ${isConductorModal ? "recibirás" : "se acreditará"} ${formatCLP(Math.abs(diffAmount))} de crédito`}
                   </div>
                   <div style={{ fontSize: 11, color: "#777", marginTop: 3 }}>
-                    {modType === 'reduction' ? "El crédito se aplica para su próxima reserva." : "El cobro se agrega a su saldo pendiente."}
+                    {modType === 'reduction' ? "El crédito se aplica para tu próxima reserva." : isConductorModal ? "El cobro se agrega a tu saldo pendiente." : "El cobro se agrega a su saldo pendiente."}
                   </div>
                 </div>
               )}
               <div style={{ display: "flex", gap: 12 }}>
                 <Btn outline onClick={() => setModModal(null)} style={{ flex: 1 }}>Cancelar</Btn>
                 <Btn primary onClick={handleProposeMod} disabled={modSubmitting || (!modEndTime && !modEndDate) || !modType} style={{ flex: 1 }}>
-                  {modSubmitting ? "Enviando…" : "Enviar propuesta"}
+                  {modSubmitting ? "Enviando…" : isConductorModal ? "Enviar solicitud" : "Enviar propuesta"}
                 </Btn>
               </div>
             </div>

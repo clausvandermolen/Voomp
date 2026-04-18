@@ -219,9 +219,10 @@ export function BookingsProvider({ children }) {
     return { enriched, creditAdjustment };
   };
 
-  // HOST — Propose a stay modification (extension or reduction).
-  // Only allowed when the booking is active (conductor has checked in).
-  const proposeModification = async (bookingId, { modEndDate, modEndTime, modNewTotal, modType }) => {
+  // HOST or CONDUCTOR — Propose a stay modification (extension or reduction).
+  // proposedBy: 'host' → mod_status='pending' (conductor responds)
+  // proposedBy: 'conductor' → mod_status='pending_host_approval' (host responds)
+  const proposeModification = async (bookingId, { modEndDate, modEndTime, modNewTotal, modType, proposedBy = 'host' }) => {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) throw new Error("Reserva no encontrada");
     if (booking.status !== "active" && booking.status !== "confirmed") throw new Error("Solo puedes modificar reservas confirmadas o activas");
@@ -232,7 +233,7 @@ export function BookingsProvider({ children }) {
         mod_end_date: modEndDate || null,
         mod_end_time: modEndTime || null,
         mod_new_total: modNewTotal,
-        mod_status: 'pending',
+        mod_status: proposedBy === 'conductor' ? 'pending_host_approval' : 'pending',
         mod_proposed_at: new Date().toISOString(),
         mod_type: modType,
       })
@@ -245,13 +246,13 @@ export function BookingsProvider({ children }) {
     return enriched;
   };
 
-  // CONDUCTOR — Accept or reject a host's modification proposal.
+  // Accept or reject a modification proposal (host or conductor can respond depending on who proposed).
   // Extension accepted: difference added as debt to conductor's credit.
   // Reduction accepted: difference returned as credit balance to conductor.
   const respondToModification = async (bookingId, accept) => {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) throw new Error("Reserva no encontrada");
-    if (booking.modStatus !== "pending") throw new Error("No hay modificación pendiente");
+    if (booking.modStatus !== "pending" && booking.modStatus !== "pending_host_approval") throw new Error("No hay modificación pendiente");
 
     const updates = { mod_status: accept ? 'approved' : 'rejected' };
     if (accept) {
