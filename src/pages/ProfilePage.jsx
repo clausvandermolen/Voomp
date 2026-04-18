@@ -74,20 +74,6 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   const [previewListing, setPreviewListing] = useState(null);
   const [tab, setTab] = useState(initialTab || "profile");
   useEffect(() => { if (initialTab && initialTab !== tab) setTab(initialTab); }, [initialTab]);
-  // Keep URL in sync with active tab/subTab (no React Router navigation, just replaceState)
-  useEffect(() => {
-    let path;
-    if (tab === "profile") {
-      path = "/profile";
-    } else if (tab === "dashboard") {
-      path = dashboardSubTab && dashboardSubTab !== "listings"
-        ? `/profile/dashboard/${dashboardSubTab}`
-        : "/profile/dashboard";
-    } else {
-      path = `/profile/${tab}`;
-    }
-    if (window.location.pathname !== path) window.history.replaceState(null, '', path);
-  }, [tab, dashboardSubTab]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(user || {});
   // My Vehicles
@@ -128,6 +114,20 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
       if (onDashboardSubTabChange) onDashboardSubTabChange(null); // reset so it doesn't re-trigger
     }
   }, [initialDashboardSubTab]);
+  // Keep URL in sync with active tab/subTab (no React Router navigation, just replaceState)
+  useEffect(() => {
+    let path;
+    if (tab === "profile") {
+      path = "/profile";
+    } else if (tab === "dashboard") {
+      path = dashboardSubTab && dashboardSubTab !== "listings"
+        ? `/profile/dashboard/${dashboardSubTab}`
+        : "/profile/dashboard";
+    } else {
+      path = `/profile/${tab}`;
+    }
+    if (window.location.pathname !== path) window.history.replaceState(null, '', path);
+  }, [tab, dashboardSubTab]);
   const savedListings = (listings || []).filter(l => l.favorite);
 
   // No local fetch needed, we use contextListings.filter(l => l.favorite) above.
