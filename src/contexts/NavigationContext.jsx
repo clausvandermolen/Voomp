@@ -26,14 +26,19 @@ export function NavigationProvider({ children }) {
   const [profileDashboardSubTab, setProfileDashboardSubTab] = useState(null);
 
   const navigate = (p, opts) => {
-    if (p === "profile" && opts?.tab) setProfileTab(opts.tab);
-    if (p === "profile" && opts?.subTab) setProfileDashboardSubTab(opts.subTab);
-    
     window.scrollTo(0, 0);
 
     if (p === "landing") routerNavigate("/");
     else if (p === "home") routerNavigate("/home");
-    else if (p === "profile") routerNavigate("/profile");
+    else if (p === "profile") {
+      const tab = opts?.tab;
+      const subTab = opts?.subTab;
+      if (tab && tab !== "profile") {
+        routerNavigate(subTab ? `/profile/${tab}/${subTab}` : `/profile/${tab}`);
+      } else {
+        routerNavigate("/profile");
+      }
+    }
     else if (p === "messages") routerNavigate("/messages");
     else if (p === "create") routerNavigate("/create");
     else if (p === "listing" && opts?.id) {

@@ -74,7 +74,11 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
   const [previewListing, setPreviewListing] = useState(null);
   const [tab, setTab] = useState(initialTab || "profile");
   useEffect(() => { if (initialTab && initialTab !== tab) setTab(initialTab); }, [initialTab]);
-  useEffect(() => { if (onTabChange) onTabChange(tab); }, [tab]);
+  // Keep URL in sync with active tab (no React Router navigation, just replaceState)
+  useEffect(() => {
+    const path = tab === "profile" ? "/profile" : `/profile/${tab}`;
+    if (window.location.pathname !== path) window.history.replaceState(null, '', path);
+  }, [tab]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(user || {});
   // My Vehicles
@@ -722,6 +726,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                           )}
                         </div>
                         <div style={{ color: "#555", fontSize: 13 }}>{b.listingTitle}</div>
+                        {b.bookingRef && <div style={{ fontSize: 11, color: "#aaa", fontFamily: "monospace", marginTop: 2 }}>Ref: {b.bookingRef}</div>}
                         {b.priceUnit === "mes" && b.monthlyStartDate && (
                           <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>
                             Desde {new Date(b.monthlyStartDate + "T00:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
@@ -1588,6 +1593,7 @@ const ProfilePage = ({ onBack, onNavigate, user, onLogout, onUpdateUser, listing
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 700, fontSize: 16 }}>{b.listingTitle}</div>
                         <div style={{ color: "#555", fontSize: 14 }}>{b.location}</div>
+                        {b.bookingRef && <div style={{ fontSize: 11, color: "#aaa", fontFamily: "monospace" }}>Ref: {b.bookingRef}</div>}
                         <div style={{ fontSize: 13, color: BRAND_COLOR, fontWeight: 600, marginTop: 4 }}>
                           {b.startDate || b.createdAt ? new Date(b.startDate || b.createdAt).toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" }) : "—"}
                         </div>

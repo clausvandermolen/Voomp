@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { useAuth } from "./contexts/AuthContext";
 import { useNavigation } from "./contexts/NavigationContext";
@@ -30,9 +30,43 @@ function ListingDetailWrapper({ headerProps, listings, selectedListing, navigate
   );
 }
 
+function ProfileWrapper({ headerProps, user, handleLogout, handleUpdateUser, markChatRead, listings, setListings, setSelectedListing, bookings, setBookings, updateListing, deleteListing, updateBooking, setEditingListing }) {
+  const { navigate } = useNavigation();
+  const location = useLocation();
+  const segments = location.pathname.replace(/^\/profile\/?/, '').split('/').filter(Boolean);
+  const tab = segments[0] || 'profile';
+  const subTab = segments[1] || null;
+  return (
+    <>
+      <Header {...headerProps} />
+      <ProfilePage
+        onBack={() => navigate("home")}
+        onNavigate={navigate}
+        user={user}
+        onLogout={handleLogout}
+        onUpdateUser={handleUpdateUser}
+        listings={listings}
+        setListings={setListings}
+        bookings={bookings}
+        setBookings={setBookings}
+        onMarkRead={markChatRead}
+        onSelectListing={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }}
+        onUpdateListing={updateListing}
+        onDeleteListing={deleteListing}
+        onUpdateBooking={updateBooking}
+        onEditListing={(l) => { setEditingListing(l); navigate("create"); }}
+        initialTab={tab}
+        initialDashboardSubTab={subTab}
+        onTabChange={() => {}}
+        onDashboardSubTabChange={() => {}}
+      />
+    </>
+  );
+}
+
 export default function App() {
   const { user, loading, logout, updateProfile } = useAuth();
-  const { page, navigate, selectedListing, setSelectedListing, editingListing, setEditingListing, filterOpen, setFilterOpen, showMap, setShowMap, mapViewState, setMapViewState, authModal, setAuthModal, profileTab, setProfileTab, profileDashboardSubTab, setProfileDashboardSubTab } = useNavigation();
+  const { page, navigate, selectedListing, setSelectedListing, editingListing, setEditingListing, filterOpen, setFilterOpen, showMap, setShowMap, mapViewState, setMapViewState, authModal, setAuthModal } = useNavigation();
   const { listings, setListings, filteredListings, fetchListings, addListing, updateListing, deleteListing, toggleFavorite, category, setCategory, searchQuery, setSearchQuery, searchVehicle, setSearchVehicle, searchDate, setSearchDate, searchRentalType, setSearchRentalType, filters, setFilters } = useListings();
   const { bookings, setBookings, fetchBookings, addBooking, updateBooking } = useBookings();
   const { unreadMessages, markChatRead } = useMessages();
@@ -290,11 +324,23 @@ export default function App() {
               <MessagesPage onBack={() => navigate("home")} user={user} onMarkRead={markChatRead} />
             </>
           } />
-          <Route path="/profile" element={
-            <>
-              <Header {...headerProps} />
-              <ProfilePage onBack={() => navigate("home")} onNavigate={navigate} user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} listings={listings} setListings={setListings} bookings={bookings} setBookings={setBookings} onMarkRead={markChatRead} onSelectListing={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onUpdateListing={updateListing} onDeleteListing={deleteListing} onUpdateBooking={updateBooking} onEditListing={(l) => { setEditingListing(l); navigate("create"); }} initialTab={profileTab} onTabChange={setProfileTab} initialDashboardSubTab={profileDashboardSubTab} onDashboardSubTabChange={setProfileDashboardSubTab} />
-            </>
+          <Route path="/profile/*" element={
+            <ProfileWrapper
+              headerProps={headerProps}
+              user={user}
+              handleLogout={handleLogout}
+              handleUpdateUser={handleUpdateUser}
+              markChatRead={markChatRead}
+              listings={listings}
+              setListings={setListings}
+              setSelectedListing={setSelectedListing}
+              bookings={bookings}
+              setBookings={setBookings}
+              updateListing={updateListing}
+              deleteListing={deleteListing}
+              updateBooking={updateBooking}
+              setEditingListing={setEditingListing}
+            />
           } />
           <Route path="/listing/:id" element={
             <ListingDetailWrapper headerProps={headerProps} listings={listings} selectedListing={selectedListing} navigate={navigate} user={user} setListings={setListings} handleUpdateUser={handleUpdateUser} handleBooking={handleBooking} bookings={bookings} setEditingListing={setEditingListing} />

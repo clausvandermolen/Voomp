@@ -38,6 +38,7 @@ const mapBooking = (b) => ({
   modStatus: b.mod_status ?? null,
   modProposedAt: b.mod_proposed_at ?? null,
   modType: b.mod_type ?? null,
+  bookingRef: b.booking_ref ?? null,
 });
 
 export function BookingsProvider({ children }) {
