@@ -41,7 +41,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
     if (!form.idNumber) return setError("Ingresa tu número de identificación.");
     const normalizedId = form.idType === "rut" ? formatRut(form.idNumber) : form.idNumber;
     if (form.idType === "rut" && !/^\d{1,3}(\.\d{3})*-[\dK]$/.test(normalizedId)) return setError("Ingresa un RUT válido.");
-    if (!form.password || form.password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    if (!form.password || form.password.length < 8) return setError("La contraseña debe tener al menos 8 caracteres.");
     if (form.password !== form.passwordConfirm) return setError("Las contraseñas no coinciden.");
 
     setSubmitting(true);
@@ -173,7 +173,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
                   <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 6, display: "block" }}>Contraseña *</label>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 10, border: "1px solid #ddd", background: "#fff" }}>
                     <Lock size={18} color="#555" />
-                    <input type={showPass ? "text" : "password"} placeholder="Mín. 6 caracteres" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} style={{ border: "none", outline: "none", flex: 1, fontSize: 15, fontFamily: "inherit", color: "#222", background: "transparent" }} />
+                    <input type={showPass ? "text" : "password"} placeholder="Mín. 8 caracteres" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} style={{ border: "none", outline: "none", flex: 1, fontSize: 15, fontFamily: "inherit", color: "#222", background: "transparent" }} />
                     <button type="button" onClick={() => setShowPass(s => !s)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#555" }}>{showPass ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                   </div>
                 </div>

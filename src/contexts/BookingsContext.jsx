@@ -174,48 +174,21 @@ export function BookingsProvider({ children }) {
   };
 
   // CONDUCTOR — Check out from an active booking.
-  // If the conductor leaves early, they receive 70% of the unused time as a credit
-  // (negative credit = balance in their favour for the next booking).
+  // Credit calculation is done server-side via secure_checkout RPC to prevent
+  // client-side manipulation of price/time values.
   const checkOut = async (bookingId) => {
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) throw new Error("Reserva no encontrada");
     if (booking.status !== "active") throw new Error("Debes hacer check-in antes de hacer check-out");
 
-    const now = new Date();
-    let creditAdjustment = 0;
-
-    if (booking.priceUnit === "hora" && booking.endDate && booking.endTime) {
-      const endDT = new Date(`${booking.endDate}T${booking.endTime}`);
-      const unusedMs = endDT.getTime() - now.getTime();
-      if (unusedMs > 0) {
-        const unusedHours = unusedMs / (1000 * 60 * 60);
-        creditAdjustment = -Math.round(unusedHours * (booking.price || 0) * 0.7);
-      }
-    } else if (booking.priceUnit === "día" && booking.endDate) {
-      const endDT = new Date(`${booking.endDate}T23:59:59`);
-      const unusedMs = endDT.getTime() - now.getTime();
-      if (unusedMs > 2 * 60 * 60 * 1000) {
-        const unusedDays = unusedMs / (1000 * 60 * 60 * 24);
-        creditAdjustment = -Math.round(unusedDays * (booking.price || 0) * 0.7);
-      }
-    }
-
-    const { data: saved, error } = await supabase
-      .from('bookings')
-      .update({ status: 'completed', checked_out_at: now.toISOString() })
-      .eq('id', bookingId)
-      .select()
-      .single();
+    const { data: result, error } = await supabase.rpc('secure_checkout', { p_booking_id: bookingId });
     if (error) { console.error(error); throw error; }
 
-    if (creditAdjustment !== 0) {
-      const { data: profile } = await supabase
-        .from('profiles').select('credit').eq('id', saved.conductor_id).single();
-      const current = profile?.credit || 0;
-      await supabase.from('profiles').update({ credit: current + creditAdjustment }).eq('id', saved.conductor_id);
-    }
+    const creditAdjustment = result?.credit_adjustment ?? 0;
 
-    const enriched = mapBooking(saved);
+    // Refetch the updated booking from DB
+    const { data: saved } = await supabase.from('bookings').select('*').eq('id', bookingId).single();
+    const enriched = saved ? mapBooking(saved) : { ...booking, status: 'completed', checkedOutAt: result?.checked_out_at };
     setBookings(prev => prev.map(x => x.id === bookingId ? { ...x, ...enriched } : x));
     return { enriched, creditAdjustment };
   };
@@ -271,14 +244,8 @@ export function BookingsProvider({ children }) {
     if (error) { console.error(error); throw error; }
 
     if (accept) {
-      const diff = (booking.modNewTotal ?? booking.total ?? 0) - (booking.total ?? 0);
-      if (diff !== 0) {
-        const { data: profile } = await supabase
-          .from('profiles').select('credit').eq('id', saved.conductor_id).single();
-        const current = profile?.credit || 0;
-        // extension → diff > 0 → more debt; reduction → diff < 0 → credit back
-        await supabase.from('profiles').update({ credit: current + diff }).eq('id', saved.conductor_id);
-      }
+      // Credit adjustment for modification is handled server-side by handle_booking_modification trigger.
+      // Avoid client-side credit writes to prevent manipulation via local state.
     }
 
     const enriched = mapBooking(saved);
