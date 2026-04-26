@@ -1,57 +1,38 @@
 import { BRAND_GRADIENT } from "../constants";
 
-// V-Bold + punto logomark
-// white variant: for use inside gradient backgrounds (popup, colored containers)
-// gradient variant: standalone on light backgrounds
-export const VoompMark = ({ size = 24, variant = "white", instanceId = "a" }) => {
+// V de ángulo cerrado + círculo completo que la enmarca (concepto pin/marca de lugar)
+// V converge desde (6,4)/(54,4) hasta el punto (30,48) dentro del círculo
+// Círculo: centro (30,38) r=19 — los brazos de la V lo cruzan en ~(17,25)/(43,25)
+export const VoompMark = ({ height = 34, variant = "white", instanceId = "a" }) => {
+  const width = height; // viewBox cuadrado 60×60
   const gradId = `vg-${instanceId}`;
   const isWhite = variant === "white";
+  const stroke = isWhite ? "white" : `url(#${gradId})`;
+  const sw = 4.5;
 
   return (
-    <svg
-      width={size}
-      height={Math.round(size * 0.85)}
-      viewBox="0 0 40 34"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width={width} height={height} viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
       {!isWhite && (
         <defs>
-          <linearGradient id={gradId} x1="0" y1="0" x2="40" y2="34" gradientUnits="userSpaceOnUse">
+          <linearGradient id={gradId} x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
             <stop stopColor="#FF385C" />
             <stop offset="1" stopColor="#FF6B35" />
           </linearGradient>
         </defs>
       )}
-      {/* Left arm */}
-      <line
-        x1="3" y1="3"
-        x2="20" y2="28"
-        stroke={isWhite ? "white" : `url(#${gradId})`}
-        strokeWidth="6.5"
-        strokeLinecap="round"
-      />
-      {/* Right arm */}
-      <line
-        x1="37" y1="3"
-        x2="20" y2="28"
-        stroke={isWhite ? "white" : `url(#${gradId})`}
-        strokeWidth="6.5"
-        strokeLinecap="round"
-      />
-      {/* Dot — white ring + filled circle */}
-      {!isWhite && <circle cx="20" cy="28" r="5.5" fill="white" />}
-      <circle
-        cx="20" cy="28" r="3.8"
-        fill={isWhite ? "white" : "#FF385C"}
-        opacity={isWhite ? "0.9" : "1"}
-      />
+      {/* Círculo que enmarca la V — dibujado primero, queda debajo */}
+      <circle cx="30" cy="38" r="19" stroke={stroke} strokeWidth={sw} fill="none" />
+      {/* Brazo izquierdo de la V — sobre el círculo */}
+      <line x1="6" y1="4" x2="30" y2="50"
+        stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+      {/* Brazo derecho de la V — sobre el círculo */}
+      <line x1="54" y1="4" x2="30" y2="50"
+        stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
     </svg>
   );
 };
 
-// Square container with gradient background + white mark inside
-// Drop-in replacement for the old Car-icon-in-gradient-box pattern
+// Contenedor cuadrado con gradiente + marca blanca
 export const VoompLogoBox = ({ size = 36, radius = 10, instanceId = "box" }) => (
   <div
     style={{
@@ -65,6 +46,6 @@ export const VoompLogoBox = ({ size = 36, radius = 10, instanceId = "box" }) => 
       flexShrink: 0,
     }}
   >
-    <VoompMark size={Math.round(size * 0.6)} variant="white" instanceId={instanceId} />
+    <VoompMark height={Math.round(size * 0.72)} variant="white" instanceId={instanceId} />
   </div>
 );
