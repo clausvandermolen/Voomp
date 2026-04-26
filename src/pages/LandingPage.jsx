@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
-import { MapPin, Shield, Zap, Car, ChevronRight, DollarSign, X } from "lucide-react";
+import { MapPin, Shield, Zap, Car, ChevronRight, DollarSign, X, Check, Star, Users, TrendingUp } from "lucide-react";
 import { BRAND_COLOR, BRAND_GRADIENT } from "../constants";
 import { supabase } from "../lib/supabase";
 import MapView from "../components/MapView";
+
+const NAVY = "#1A3C5E";
+const SAFETY_BLUE = "#2563EB";
+const SUCCESS_GREEN = "#16A34A";
+const AMBER = "#F59E0B";
+const SURFACE = "#F7F8FA";
+const LIGHT_BLUE = "#EFF6FF";
 
 const LandingPage = ({ onEnter, onRegister, onLogin }) => {
   const [scrollY, setScrollY] = useState(0);
@@ -44,16 +51,58 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
   };
 
   const features = [
-    { icon: <Shield size={28} />, title: "Reserva segura", desc: "Cada reserva cuenta con verificación del anfitrión y del conductor para mayor tranquilidad." },
-    { icon: <MapPin size={28} />, title: "Encuentra cerca de ti", desc: "Espacios verificados en tu ciudad. Desde garajes privados hasta estacionamientos ejecutivos." },
-    { icon: <Zap size={28} />, title: "Carga eléctrica", desc: "Filtra espacios con cargadores EV. Compatible con Tesla, CCS y Tipo 2 para tu vehículo eléctrico." },
-    { icon: <DollarSign size={28} />, title: "Gana con tu espacio", desc: "¿Tienes un estacionamiento vacío? Publícalo y genera ingresos pasivos todos los meses." },
+    { icon: <Shield size={28} />, title: "Reserva segura", desc: "Verificación de anfitrión y conductor. Check-in por app, sin efectivo ni estrés." },
+    { icon: <MapPin size={28} />, title: "Donde lo necesitas", desc: "Espacios reales en el barrio que buscas. Desde garajes privados hasta estacionamientos ejecutivos." },
+    { icon: <Zap size={28} />, title: "Carga eléctrica", desc: "Filtra espacios con cargadores EV. Compatible con Tesla, CCS y Tipo 2." },
+    { icon: <DollarSign size={28} />, title: "Gana con tu espacio", desc: "¿Tienes un garaje vacío? Publícalo gratis y empieza a recibir ingresos este mes." },
   ];
 
   const steps = [
-    { num: "01", title: "Busca tu zona", desc: "Ingresa tu ubicación o explora el mapa interactivo para encontrar espacios cerca de donde los necesitas." },
-    { num: "02", title: "Compara y elige", desc: "Filtra por precio, tipo de vehículo, seguridad y amenidades. Lee reseñas de otros conductores." },
+    { num: "01", title: "Busca tu zona", desc: "Ingresa tu ubicación o explora el mapa para encontrar espacios disponibles cerca de ti." },
+    { num: "02", title: "Compara y elige", desc: "Filtra por precio, tipo de vehículo, seguridad y horario. Lee reseñas de otros conductores." },
     { num: "03", title: "Reserva al instante", desc: "Paga de forma segura y recibe las instrucciones de acceso. ¡Tu espacio te espera!" },
+  ];
+
+  const conductorBenefits = [
+    "Encuentra en segundos — espacios reales, disponibles ahora, en el barrio que necesitas",
+    "Paga justo — precios directos del dueño, sin comisiones infladas ni tarifas sorpresa",
+    "Llega seguro — espacios verificados, check-in por app, sin efectivo ni estrés",
+  ];
+
+  const hostBenefits = [
+    "Publica gratis — sube tu espacio en minutos y empieza a recibir reservas hoy",
+    "Tú pones las reglas — horarios, precio, tipo de vehículo. Total control",
+    "Cobras seguro — pago digital directo a tu cuenta, sin trámites, sin plata en mano",
+  ];
+
+  const stats = [
+    { number: "+4.200", label: "espacios publicados", icon: <MapPin size={20} /> },
+    { number: "12", label: "comunas activas", icon: <TrendingUp size={20} /> },
+    { number: "18.000", label: "conductores", icon: <Users size={20} /> },
+    { number: "96%", label: "satisfacción", icon: <Star size={20} /> },
+  ];
+
+  const testimonials = [
+    {
+      quote: "Trabajo en Providencia y encontrar mensualidad era una pesadilla. Con Voomp arrendé un garaje a media cuadra de la oficina. Pago la mitad que en el estacionamiento de enfrente.",
+      name: "Rodrigo M.",
+      role: "Conductor · Las Condes",
+      initial: "R",
+      color: SAFETY_BLUE,
+    },
+    {
+      quote: "Tenía el garaje de mi mamá vacío hace dos años. Lo subí a Voomp un martes y el viernes ya tenía mi primera reserva. Ya llevo cuatro meses con el mismo arrendatario.",
+      name: "Valentina C.",
+      role: "Anfitriona · Ñuñoa",
+      initial: "V",
+      color: SUCCESS_GREEN,
+    },
+  ];
+
+  const comparisons = [
+    { feature: "Ubicación", traditional: "Donde existe el edificio", voomp: "Donde tú lo necesitas" },
+    { feature: "Precio", traditional: "Tarifa fija, sin negociación", voomp: "Directo del dueño, desde $1.500/hr" },
+    { feature: "Mensualidad", traditional: "Lista de espera o no hay", voomp: "Reserva directa, disponible ya" },
   ];
 
   return (
@@ -65,6 +114,7 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
       `}</style>
 
       {/* Welcome popup */}
@@ -109,28 +159,49 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
       <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0 }}>
           <img src="/hero.png" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", transform: `scale(${1 + scrollY * 0.0003})`, transition: "transform .1s" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.7) 100%)" }} />
+          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, rgba(26,60,94,.55) 0%, rgba(26,60,94,.35) 50%, rgba(26,60,94,.75) 100%)` }} />
         </div>
         <div style={{ position: "relative", zIndex: 2, textAlign: "center", maxWidth: 780, padding: isMobile ? "0 20px" : "0 24px", animation: "fadeUp .8s ease-out", width: "100%" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,.12)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,.25)", borderRadius: 100, padding: "6px 14px", marginBottom: isMobile ? 16 : 20 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ADE80", animation: "pulse 2s infinite" }} />
+            <span style={{ fontSize: isMobile ? 12 : 13, color: "rgba(255,255,255,.9)", fontWeight: 600 }}>Disponible en Santiago</span>
+          </div>
           <h1 style={{ fontSize: isMobile ? 34 : 56, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: isMobile ? 14 : 20, letterSpacing: isMobile ? -0.5 : -1 }}>
-            Tu lugar para estacionar,{" "}
-            <span style={{ background: BRAND_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>siempre seguro</span>
+            Tu vecino tiene{" "}
+            <span style={{ background: BRAND_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>tu lugar.</span>
           </h1>
           <p style={{ fontSize: isMobile ? 15 : 20, color: "rgba(255,255,255,.85)", lineHeight: 1.6, marginBottom: isMobile ? 24 : 36, maxWidth: 580, margin: isMobile ? "0 auto 24px" : "0 auto 36px" }}>
-            Voomp conecta conductores con espacios de estacionamiento verificados. Reserva en segundos, estaciona con tranquilidad.
+            Voomp conecta conductores con espacios de estacionamiento verificados en su barrio. Reserva en segundos, estaciona con tranquilidad.
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? 10 : 16, flexDirection: isMobile ? "column" : "row", flexWrap: "wrap", alignItems: "center" }}>
-            <button onClick={openMapModal} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "none", background: BRAND_GRADIENT, color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 30px rgba(255,56,92,.4)", transition: "transform .2s, box-shadow .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 12px 40px rgba(255,56,92,.5)"; }} onMouseLeave={e => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = "0 8px 30px rgba(255,56,92,.4)"; }}>
+            <button onClick={openMapModal} style={{ padding: isMobile ? "16px 24px" : "16px 36px", borderRadius: 12, border: "none", background: BRAND_GRADIENT, color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 30px rgba(255,56,92,.4)", transition: "transform .2s, box-shadow .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(255,56,92,.5)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(255,56,92,.4)"; }}>
               Explorar espacios
             </button>
-            <button onClick={onRegister} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "rgba(255,255,255,.1)", backdropFilter: "blur(8px)", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,.2)"; }} onMouseLeave={e => { e.target.style.background = "rgba(255,255,255,.1)"; }}>
-              Publica tu espacio
+            <button onClick={onRegister} style={{ padding: isMobile ? "16px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "rgba(255,255,255,.1)", backdropFilter: "blur(8px)", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.2)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,.1)"; }}>
+              Publica tu espacio →
             </button>
           </div>
+          {/* Trust mini-badges */}
+          <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? 12 : 24, marginTop: isMobile ? 24 : 36, flexWrap: "wrap" }}>
+            {["🔒 Pago seguro", "✅ Espacios verificados", "⭐ 96% satisfacción"].map((t, i) => (
+              <span key={i} style={{ fontSize: isMobile ? 11 : 13, color: "rgba(255,255,255,.75)", fontWeight: 600 }}>{t}</span>
+            ))}
+          </div>
         </div>
-        {/* Scroll indicator */}
         <div style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", animation: "float 2s ease-in-out infinite" }}>
           <ChevronRight size={24} color="rgba(255,255,255,.6)" style={{ transform: "rotate(90deg)" }} />
+        </div>
+      </section>
+
+      {/* Stats bar */}
+      <section style={{ background: NAVY, padding: isMobile ? "28px 20px" : "32px 24px" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto", display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? 20 : 0 }}>
+          {stats.map((s, i) => (
+            <div key={i} style={{ textAlign: "center", borderRight: !isMobile && i < 3 ? "1px solid rgba(255,255,255,.1)" : "none", padding: isMobile ? "0" : "0 24px" }}>
+              <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{s.number}</div>
+              <div style={{ fontSize: isMobile ? 12 : 13, color: "rgba(255,255,255,.6)", marginTop: 4, fontWeight: 600 }}>{s.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -138,35 +209,203 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
       <section style={{ maxWidth: 1120, margin: "0 auto", padding: isMobile ? "60px 20px" : "100px 24px" }}>
         <div style={{ textAlign: "center", marginBottom: isMobile ? 36 : 56 }}>
           <span style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 2 }}>¿Por qué Voomp?</span>
-          <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, letterSpacing: -.5 }}>Estacionar nunca fue tan fácil</h2>
+          <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, letterSpacing: -.5, color: NAVY }}>Estacionar nunca fue tan fácil</h2>
           <p style={{ color: "#555", fontSize: isMobile ? 15 : 17, marginTop: 12, maxWidth: 520, margin: "12px auto 0" }}>La plataforma que transforma cómo encontramos y ofrecemos estacionamiento en la ciudad.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(240px, 1fr))", gap: isMobile ? 16 : 24 }}>
           {features.map((f, i) => (
-            <div key={i} style={{ padding: isMobile ? 24 : 32, borderRadius: 20, border: "1px solid #eee", transition: "all .3s", cursor: "default" }} onMouseEnter={e => { e.currentTarget.style.borderColor = BRAND_COLOR; e.currentTarget.style.boxShadow = "0 12px 40px rgba(255,56,92,.1)"; e.currentTarget.style.transform = "translateY(-4px)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "#eee"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              <div style={{ width: isMobile ? 48 : 56, height: isMobile ? 48 : 56, borderRadius: 16, background: `${BRAND_COLOR}10`, display: "flex", alignItems: "center", justifyContent: "center", color: BRAND_COLOR, marginBottom: isMobile ? 14 : 20 }}>{f.icon}</div>
-              <h3 style={{ fontSize: isMobile ? 17 : 18, fontWeight: 700, marginBottom: 8 }}>{f.title}</h3>
+            <div key={i} style={{ padding: isMobile ? 24 : 32, borderRadius: 20, border: "1px solid #eee", borderTop: `3px solid ${BRAND_COLOR}`, transition: "all .3s", cursor: "default" }} onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 12px 40px rgba(255,56,92,.1)"; e.currentTarget.style.transform = "translateY(-4px)"; }} onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}>
+              <div style={{ width: isMobile ? 48 : 56, height: isMobile ? 48 : 56, borderRadius: 16, background: `${BRAND_COLOR}12`, display: "flex", alignItems: "center", justifyContent: "center", color: BRAND_COLOR, marginBottom: isMobile ? 14 : 20 }}>{f.icon}</div>
+              <h3 style={{ fontSize: isMobile ? 17 : 18, fontWeight: 700, marginBottom: 8, color: NAVY }}>{f.title}</h3>
               <p style={{ color: "#555", fontSize: isMobile ? 14 : 15, lineHeight: 1.6 }}>{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
+      {/* Value Proposition — dual cards */}
+      <section style={{ background: SURFACE, padding: isMobile ? "60px 20px" : "100px 24px" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: isMobile ? 36 : 56 }}>
+            <span style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 2 }}>Para todos</span>
+            <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, letterSpacing: -.5, color: NAVY }}>Voomp funciona para ti</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 20 : 28 }}>
+            {/* Conductor card */}
+            <div style={{ background: "#fff", borderRadius: 24, padding: isMobile ? "28px 24px" : "40px 36px", boxShadow: "0 4px 24px rgba(0,0,0,.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: `${SAFETY_BLUE}12`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Car size={24} color={SAFETY_BLUE} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: SAFETY_BLUE, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 2 }}>Conductores</div>
+                  <h3 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 800, color: NAVY }}>Para cuando dar vueltas ya no es opción</h3>
+                </div>
+              </div>
+              {conductorBenefits.map((b, i) => (
+                <div key={i} style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: `${SUCCESS_GREEN}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                    <Check size={13} color={SUCCESS_GREEN} strokeWidth={3} />
+                  </div>
+                  <p style={{ fontSize: isMobile ? 14 : 15, color: "#374151", lineHeight: 1.55 }}>{b}</p>
+                </div>
+              ))}
+              <button onClick={onRegister} style={{ marginTop: 8, padding: "12px 24px", borderRadius: 10, border: "none", background: SAFETY_BLUE, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", width: "100%", transition: "opacity .2s" }} onMouseEnter={e => e.currentTarget.style.opacity = ".9"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                Encontrar estacionamiento →
+              </button>
+            </div>
+            {/* Host card */}
+            <div style={{ background: "#fff", borderRadius: 24, padding: isMobile ? "28px 24px" : "40px 36px", boxShadow: "0 4px 24px rgba(0,0,0,.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: `${SUCCESS_GREEN}12`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <DollarSign size={24} color={SUCCESS_GREEN} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: SUCCESS_GREEN, textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 2 }}>Anfitriones</div>
+                  <h3 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 800, color: NAVY }}>Tu garaje vacío te puede pagar el dividendo</h3>
+                </div>
+              </div>
+              {hostBenefits.map((b, i) => (
+                <div key={i} style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: `${SUCCESS_GREEN}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                    <Check size={13} color={SUCCESS_GREEN} strokeWidth={3} />
+                  </div>
+                  <p style={{ fontSize: isMobile ? 14 : 15, color: "#374151", lineHeight: 1.55 }}>{b}</p>
+                </div>
+              ))}
+              <button onClick={onRegister} style={{ marginTop: 8, padding: "12px 24px", borderRadius: 10, border: "none", background: SUCCESS_GREEN, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", width: "100%", transition: "opacity .2s" }} onMouseEnter={e => e.currentTarget.style.opacity = ".9"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                Publicar mi espacio gratis →
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How it Works */}
-      <section style={{ background: "#fafafa", padding: isMobile ? "60px 20px" : "100px 24px" }}>
+      <section style={{ background: "#fff", padding: isMobile ? "60px 20px" : "100px 24px" }}>
         <div style={{ maxWidth: 1120, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 36 : 56 }}>
             <span style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 2 }}>Cómo funciona</span>
-            <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, letterSpacing: -.5 }}>Tres pasos y listo</h2>
+            <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, letterSpacing: -.5, color: NAVY }}>Tres pasos y listo</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: isMobile ? 28 : 40 }}>
             {steps.map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: isMobile ? 40 : 52, fontWeight: 800, background: BRAND_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: isMobile ? 10 : 16 }}>{s.num}</div>
-                <h3 style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, marginBottom: 10 }}>{s.title}</h3>
+                <h3 style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, marginBottom: 10, color: NAVY }}>{s.title}</h3>
                 <p style={{ color: "#555", fontSize: isMobile ? 14 : 15, lineHeight: 1.7, maxWidth: 320, margin: "0 auto" }}>{s.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison — Voomp vs traditional */}
+      <section style={{ background: SURFACE, padding: isMobile ? "60px 20px" : "100px 24px" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: isMobile ? 36 : 48 }}>
+            <span style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 2 }}>La diferencia</span>
+            <h2 style={{ fontSize: isMobile ? 24 : 36, fontWeight: 800, marginTop: 12, letterSpacing: -.5, color: NAVY }}>Voomp vs. el estacionamiento tradicional</h2>
+          </div>
+          <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,.06)" }}>
+            {/* Header */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: NAVY }}>
+              <div style={{ padding: isMobile ? "14px 12px" : "18px 24px", fontSize: isMobile ? 12 : 13, fontWeight: 700, color: "rgba(255,255,255,.5)", textTransform: "uppercase", letterSpacing: 1 }}></div>
+              <div style={{ padding: isMobile ? "14px 12px" : "18px 24px", fontSize: isMobile ? 12 : 13, fontWeight: 700, color: "rgba(255,255,255,.55)", textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Tradicional</div>
+              <div style={{ padding: isMobile ? "14px 12px" : "18px 24px", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <Car size={14} color="#fff" />
+                <span style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#fff" }}>Voomp</span>
+              </div>
+            </div>
+            {comparisons.map((c, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderBottom: i < comparisons.length - 1 ? "1px solid #f0f0f0" : "none" }}>
+                <div style={{ padding: isMobile ? "16px 12px" : "20px 24px", fontSize: isMobile ? 13 : 14, fontWeight: 700, color: NAVY }}>{c.feature}</div>
+                <div style={{ padding: isMobile ? "16px 12px" : "20px 24px", fontSize: isMobile ? 12 : 13, color: "#888", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}>{c.traditional}</div>
+                <div style={{ padding: isMobile ? "16px 12px" : "20px 24px", fontSize: isMobile ? 12 : 13, fontWeight: 700, color: SUCCESS_GREEN, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <Check size={14} strokeWidth={3} />{c.voomp}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section style={{ background: "#fff", padding: isMobile ? "60px 20px" : "100px 24px" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: isMobile ? 36 : 56 }}>
+            <span style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 2 }}>Lo que dicen</span>
+            <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, letterSpacing: -.5, color: NAVY }}>La comunidad Voomp habla</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 20 : 28 }}>
+            {testimonials.map((t, i) => (
+              <div key={i} style={{ background: SURFACE, borderRadius: 20, padding: isMobile ? "28px 24px" : "36px 32px", position: "relative" }}>
+                <div style={{ fontSize: isMobile ? 36 : 48, color: `${BRAND_COLOR}20`, fontWeight: 900, lineHeight: 1, position: "absolute", top: 16, left: 24 }}>"</div>
+                <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+                  {[...Array(5)].map((_, s) => <Star key={s} size={14} fill={AMBER} color={AMBER} />)}
+                </div>
+                <p style={{ fontSize: isMobile ? 14 : 15, color: "#374151", lineHeight: 1.7, marginBottom: 20, position: "relative", zIndex: 1 }}>"{t.quote}"</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: t.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: "#fff" }}>{t.initial}</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: NAVY }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust badges */}
+      <section style={{ background: LIGHT_BLUE, padding: isMobile ? "36px 20px" : "48px 24px" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: isMobile ? 20 : 48, flexWrap: "wrap" }}>
+            {[
+              { icon: "🔒", label: "Pago 100% seguro" },
+              { icon: "✅", label: "Espacios verificados" },
+              { icon: "📋", label: "Seguro incluido" },
+              { icon: "🛡️", label: "Garantía Voomp" },
+              { icon: "⚡", label: "Soporte 24/7" },
+            ].map((b, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: isMobile ? 18 : 20 }}>{b.icon}</span>
+                <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: NAVY }}>{b.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mission & Vision */}
+      <section style={{ background: NAVY, padding: isMobile ? "72px 20px" : "100px 24px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,.03)" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,56,92,.08)" }} />
+        <div style={{ maxWidth: 1120, margin: "0 auto", position: "relative" }}>
+          <div style={{ textAlign: "center", marginBottom: isMobile ? 36 : 56 }}>
+            <span style={{ fontSize: isMobile ? 12 : 14, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 2 }}>Quiénes somos</span>
+            <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight: 800, marginTop: 12, color: "#fff", letterSpacing: -.5 }}>Construyendo la ciudad de mañana</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 24 : 40 }}>
+            <div style={{ background: "rgba(255,255,255,.06)", borderRadius: 20, padding: isMobile ? "28px 24px" : "40px 36px", border: "1px solid rgba(255,255,255,.08)" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${BRAND_COLOR}20`, border: `1px solid ${BRAND_COLOR}40`, borderRadius: 100, padding: "4px 12px", marginBottom: 20 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: BRAND_COLOR }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: BRAND_COLOR, textTransform: "uppercase", letterSpacing: 1.5 }}>Misión</span>
+              </div>
+              <p style={{ fontSize: isMobile ? 15 : 17, color: "rgba(255,255,255,.85)", lineHeight: 1.7 }}>
+                Voomp conecta a quienes necesitan estacionar con quienes tienen un espacio vacío. Creemos que la ciudad funciona mejor cuando sus vecinos se ayudan — y que encontrar estacionamiento nunca debería ser un problema.
+              </p>
+            </div>
+            <div style={{ background: "rgba(255,255,255,.06)", borderRadius: 20, padding: isMobile ? "28px 24px" : "40px 36px", border: "1px solid rgba(255,255,255,.08)" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(74,222,128,.15)", border: "1px solid rgba(74,222,128,.3)", borderRadius: 100, padding: "4px 12px", marginBottom: 20 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ADE80" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#4ADE80", textTransform: "uppercase", letterSpacing: 1.5 }}>Visión</span>
+              </div>
+              <p style={{ fontSize: isMobile ? 15 : 17, color: "rgba(255,255,255,.85)", lineHeight: 1.7 }}>
+                Ser la red de estacionamiento más grande de Chile, donde cada garaje vacío es una oportunidad y cada conductor llega tranquilo a su destino. En 5 años, Voomp es parte del día a día de las ciudades latinoamericanas.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -202,30 +441,51 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", background: BRAND_GRADIENT, borderRadius: isMobile ? 20 : 28, padding: isMobile ? "48px 24px" : "72px 40px", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,.08)" }} />
           <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,.06)" }} />
-          <h2 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 800, color: "#fff", marginBottom: isMobile ? 12 : 16, position: "relative" }}>¿Listo para estacionar mejor?</h2>
-          <p style={{ color: "rgba(255,255,255,.85)", fontSize: isMobile ? 15 : 17, marginBottom: isMobile ? 24 : 32, maxWidth: 480, margin: isMobile ? "0 auto 24px" : "0 auto 32px", position: "relative" }}>Únete a la comunidad de conductores y anfitriones de Voomp.</p>
+          <h2 style={{ fontSize: isMobile ? 26 : 36, fontWeight: 800, color: "#fff", marginBottom: isMobile ? 12 : 16, position: "relative" }}>¿Listo para estacionar diferente?</h2>
+          <p style={{ color: "rgba(255,255,255,.85)", fontSize: isMobile ? 15 : 17, marginBottom: isMobile ? 24 : 32, maxWidth: 480, margin: isMobile ? "0 auto 24px" : "0 auto 32px", position: "relative" }}>Únete a miles de conductores y anfitriones que ya usan Voomp en Santiago.</p>
           <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? 10 : 16, position: "relative", flexDirection: isMobile ? "column" : "row", alignItems: "center" }}>
-            <button onClick={onRegister} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "none", background: "#fff", color: BRAND_COLOR, fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "transform .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => e.target.style.transform = "translateY(-2px)"} onMouseLeave={e => e.target.style.transform = "translateY(0)"}>
+            <button onClick={onRegister} style={{ padding: isMobile ? "16px 24px" : "16px 36px", borderRadius: 12, border: "none", background: "#fff", color: BRAND_COLOR, fontSize: isMobile ? 16 : 17, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "transform .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
               Crear cuenta gratis
             </button>
-            <button onClick={openMapModal} style={{ padding: isMobile ? "14px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "transparent", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }}>
+            <button onClick={openMapModal} style={{ padding: isMobile ? "16px 24px" : "16px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,.4)", background: "transparent", color: "#fff", fontSize: isMobile ? 16 : 17, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .2s", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? 320 : "none" }}>
               Explorar espacios
             </button>
           </div>
         </div>
       </section>
 
-      {/* Landing Footer */}
-      <footer style={{ borderTop: "1px solid #eee", padding: isMobile ? "28px 20px" : "40px 24px" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: isMobile ? 12 : 16, flexDirection: isMobile ? "column" : "row", textAlign: isMobile ? "center" : "left" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: BRAND_GRADIENT, display: "flex", alignItems: "center", justifyContent: "center" }}><Car size={14} color="#fff" /></div>
-            <span style={{ fontWeight: 800, fontSize: 18, color: BRAND_COLOR }}>Voomp</span>
+      {/* Footer */}
+      <footer style={{ background: "#0F2137", padding: isMobile ? "36px 20px" : "48px 24px" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 24, flexDirection: isMobile ? "column" : "row", marginBottom: 32 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: BRAND_GRADIENT, display: "flex", alignItems: "center", justifyContent: "center" }}><Car size={15} color="#fff" /></div>
+                <span style={{ fontWeight: 800, fontSize: 20, color: "#fff" }}>Voomp</span>
+              </div>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,.45)", maxWidth: 220, lineHeight: 1.6 }}>Tu vecino tiene tu lugar.</p>
+            </div>
+            <div style={{ display: "flex", gap: isMobile ? 32 : 56, flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>Producto</div>
+                {["Cómo funciona", "Explorar espacios", "Publicar espacio"].map(l => (
+                  <div key={l} style={{ fontSize: 13, color: "rgba(255,255,255,.6)", marginBottom: 8, cursor: "pointer" }}>{l}</div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.35)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 12 }}>Empresa</div>
+                {["Misión", "Privacidad", "Términos"].map(l => (
+                  <div key={l} style={{ fontSize: 13, color: "rgba(255,255,255,.6)", marginBottom: 8, cursor: "pointer" }}>{l}</div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div style={{ color: "#555", fontSize: isMobile ? 12 : 13 }}>© 2026 Voomp, Inc. · Privacidad · Términos · Contacto</div>
-          <div style={{ display: "flex", gap: 16 }}>
-            <span style={{ fontSize: isMobile ? 13 : 14 }}>🌐 Español (CL)</span>
-            <span style={{ fontSize: isMobile ? 13 : 14 }}>$ CLP</span>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ color: "rgba(255,255,255,.35)", fontSize: 12 }}>© 2026 Voomp, Inc. Todos los derechos reservados.</div>
+            <div style={{ display: "flex", gap: 16 }}>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,.35)" }}>🌐 Español (CL)</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,.35)" }}>$ CLP</span>
+            </div>
           </div>
         </div>
       </footer>
