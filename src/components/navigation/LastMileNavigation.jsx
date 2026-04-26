@@ -1,5 +1,5 @@
 import React from 'react';
-import { SPACING, FONT_SIZE, FONT_WEIGHT, COLORS, RADIUS } from '../constants/styles';
+import { SPACING, FONT_SIZE, FONT_WEIGHT, COLORS, RADIUS } from '../../constants/styles';
 
 const LastMileNavigation = ({ latitude, longitude, address }) => {
   const hasCoordinates = latitude != null && longitude != null &&

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { SPACING, FONT_SIZE, FONT_WEIGHT, COLORS, RADIUS } from '../constants/styles';
+import { SPACING, FONT_SIZE, FONT_WEIGHT, COLORS, RADIUS } from '../../constants/styles';
 
 const HostDashboard = ({ listings, onBlockDate, onPriceUpdate }) => {
   const [activeTab, setActiveTab] = useState(1);

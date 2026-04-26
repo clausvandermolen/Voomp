@@ -15,14 +15,15 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Code-split large components
-          'interactive-map': ['./src/components/map/InteractiveListingMap.jsx'],
-          'vendor': [
-            'react',
-            'react-dom',
-            'react-router-dom',
-          ],
+        manualChunks(id) {
+          if (id.includes('InteractiveListingMap')) {
+            return 'interactive-map';
+          }
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor';
+            }
+          }
         },
       },
     },
