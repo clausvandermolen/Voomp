@@ -11,6 +11,7 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
   );
   const [showMap, setShowMap] = useState(false);
   const [mapListings, setMapListings] = useState([]);
+  const [mapError, setMapError] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
@@ -26,12 +27,20 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
 
   const openMapModal = async () => {
     setShowMap(true);
-    const { data } = await supabase
-      .from("listings")
-      .select("id, title, price, lat, lng")
-      .not("lat", "is", null)
-      .not("lng", "is", null);
-    setMapListings(data || []);
+    setMapError("");
+    try {
+      const { data, error } = await supabase
+        .from("listings")
+        .select("id, title, price, lat, lng")
+        .not("lat", "is", null)
+        .not("lng", "is", null);
+      if (error) throw error;
+      setMapListings(data || []);
+    } catch (err) {
+      console.error("Error loading map listings:", err);
+      setMapListings([]);
+      setMapError("No pudimos cargar los espacios. Intenta nuevamente más tarde.");
+    }
   };
 
   const features = [
@@ -172,11 +181,17 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
               <span style={{ fontWeight: 700, fontSize: 16 }}>Espacios disponibles</span>
               <div style={{ width: 28 }} />
             </div>
-            <div style={{ flex: 1 }}>
-              <MapView
-                listings={mapListings}
-                onSelect={() => { setShowMap(false); onRegister(); }}
-              />
+            <div style={{ flex: 1, position: "relative" }}>
+              {mapError ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", padding: 24, textAlign: "center", color: "#b91c1c", fontSize: 15 }}>
+                  {mapError}
+                </div>
+              ) : (
+                <MapView
+                  listings={mapListings}
+                  onSelect={() => { setShowMap(false); onRegister(); }}
+                />
+              )}
             </div>
           </div>
         </div>

@@ -1,4 +1,7 @@
-export const formatCLP = (n) => "$" + Number(n).toLocaleString("es-CL");
+export const formatCLP = (num) => {
+  if (!num) return "$0";
+  return "$" + Math.round(num).toLocaleString("es-CL");
+};
 
 // Normaliza un RUT chileno a formato 00.000.000-0
 // Acepta entrada con o sin puntos y guion, con dígito verificador K/k.

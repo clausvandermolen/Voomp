@@ -10,6 +10,8 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
   const [newMsg, setNewMsg] = useState("");
   const [allMessages, setAllMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -18,7 +20,11 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
     supabase.from('messages').select('*')
       .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
       .order('created_at', { ascending: true })
-      .then(({ data }) => { setAllMessages(data || []); setLoading(false); });
+      .then(({ data, error: err }) => {
+        if (err) setError("Error cargando mensajes");
+        setAllMessages(data || []);
+        setLoading(false);
+      });
 
     // Realtime subscription for new messages
     const channel = supabase.channel('messages-page')
@@ -62,7 +68,7 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
   const activeConvo = chats.find(c => c.chatKey === activeChat);
 
   const handleSendMessage = async () => {
-    if (!newMsg.trim() || !activeConvo) return;
+    if (!newMsg.trim() || !activeConvo || sending) return;
     const otherMsg = activeConvo.messages.find(m => String(m.sender_id) !== String(user.id));
     const recipientId = otherMsg ? otherMsg.sender_id : activeConvo.messages[0]?.recipient_id;
     const msg = {
@@ -73,10 +79,17 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
       recipient_id: recipientId,
       text: newMsg.trim(),
     };
+    setSending(true);
+    setError(null);
     try {
-      await supabase.from('messages').insert(msg);
-    } catch (e) { /* silent */ }
-    setNewMsg("");
+      const { error: err } = await supabase.from('messages').insert(msg);
+      if (err) throw err;
+      setNewMsg("");
+    } catch {
+      setError("Error enviando mensaje. Intenta de nuevo.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -133,9 +146,14 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
                 );
               })}
             </div>
+            {error && (
+              <div style={{ padding: "8px 20px", background: "#fee2e2", color: "#b91c1c", fontSize: 13, borderTop: "1px solid #fecaca" }}>
+                {error}
+              </div>
+            )}
             <div style={{ padding: "12px 20px", borderTop: "1px solid #eee", display: "flex", gap: 8 }}>
-              <input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Escribe un mensaje..." onKeyDown={e => { if (e.key === "Enter") handleSendMessage(); }} style={{ flex: 1, padding: "10px 16px", borderRadius: 24, border: "1px solid #ddd", fontSize: 15, fontFamily: "inherit", outline: "none" }} />
-              <button onClick={handleSendMessage} style={{ width: 40, height: 40, borderRadius: "50%", background: BRAND_COLOR, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Escribe un mensaje..." disabled={sending} onKeyDown={e => { if (e.key === "Enter" && !sending) handleSendMessage(); }} style={{ flex: 1, padding: "10px 16px", borderRadius: 24, border: "1px solid #ddd", fontSize: 15, fontFamily: "inherit", outline: "none", opacity: sending ? 0.6 : 1 }} />
+              <button onClick={handleSendMessage} disabled={sending} style={{ width: 40, height: 40, borderRadius: "50%", background: BRAND_COLOR, border: "none", cursor: sending ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: sending ? 0.6 : 1 }}>
                 <Send size={16} color="#fff" />
               </button>
             </div>

@@ -1,23 +1,101 @@
 import { useState } from "react";
 import { AlertCircle, Camera, CreditCard, Lock, Info } from "lucide-react";
 import { BRAND_COLOR } from "../constants";
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from "../constants/styles";
 import { formatCLP } from "../utils/format";
 import { Btn, Pill, Input, StarRating } from "./ui";
+
+/* ─── Style constants ─── */
+const cardBoxStyle = {
+  display: "flex",
+  gap: SPACING.md,
+  padding: SPACING.md,
+  background: COLORS.bg,
+  borderRadius: RADIUS.lg,
+  marginBottom: SPACING.xl,
+};
+
+const sectionRowStyle = {
+  padding: `${SPACING.sm}px 0`,
+  borderBottom: "1px solid #eee",
+};
+
+const mutedTextStyle = {
+  fontSize: FONT_SIZE.md,
+  color: COLORS.muted,
+};
+
+const smallMutedStyle = {
+  fontSize: FONT_SIZE.base,
+  color: COLORS.muted,
+};
+
+const summaryBoxStyle = {
+  background: COLORS.bg,
+  borderRadius: RADIUS.lg,
+  padding: SPACING.md,
+  marginBottom: SPACING.xl,
+};
+
+const summaryRowStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  marginBottom: SPACING.xs,
+};
+
+const errorBoxStyle = {
+  padding: SPACING.sm,
+  background: COLORS.danger,
+  color: "#fff",
+  borderRadius: RADIUS.md,
+  fontSize: FONT_SIZE.base,
+  fontWeight: FONT_WEIGHT.semibold,
+  marginBottom: SPACING.md,
+};
+
+const warningBoxStyle = {
+  padding: SPACING.md,
+  background: "#fffbeb",
+  borderRadius: RADIUS.lg,
+  border: "1px solid #f59e0b33",
+  marginBottom: SPACING.xl,
+};
+
+const debtNoticeStyle = {
+  padding: SPACING.sm,
+  background: "#fef2f2",
+  borderRadius: RADIUS.md,
+  marginBottom: SPACING.md,
+  fontSize: FONT_SIZE.base,
+  border: "1px solid #fca5a5",
+};
+
+const billingOption = (active) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: SPACING.sm,
+  padding: 14,
+  borderRadius: RADIUS.lg,
+  border: active ? `2px solid ${BRAND_COLOR}` : "2px solid #eee",
+  cursor: "pointer",
+  background: active ? "#fff5f7" : "#fff",
+  transition: "all .15s",
+});
 
 /* ─── Booking Confirmation ─── */
 const BookingConfirmation = ({ listing, user, selectedModality, availableModalities, bookingHours, bookingDate, bookingEndDate, monthlyStartDate, monthlyEndMonth, vehicleInfo, onBooking, onClose, onUpdateUser }) => {
   const [step, setStep] = useState(0);
   const [cardNum, setCardNum] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState("");
   const userDebt = Number(user?.credit) || 0;
-  const [payMethod, setPayMethod] = useState("tarjeta"); // efectivo gets disabled below when userDebt > 0
-  const [billingChoice, setBillingChoice] = useState("installment"); // "installment" or "upfront"
+  const [payMethod, setPayMethod] = useState("tarjeta");
+  const [billingChoice, setBillingChoice] = useState("installment");
 
   const mod = availableModalities.find(m => m.id === selectedModality) || availableModalities[0] || { price: listing.price, id: listing.priceUnit };
   const modPrice = mod.price;
   const modUnit = mod.id;
 
-  // Hourly calculation
   const calcHours = () => {
     if (!bookingHours || !bookingDate) return 1;
     const endD = bookingEndDate || bookingDate;
@@ -27,7 +105,6 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
     return mins > 0 ? mins / 60 : 1;
   };
 
-  // Daily calculation
   const calcDays = () => {
     if (!bookingDate) return 1;
     if (!bookingEndDate || bookingEndDate === bookingDate) return 1;
@@ -38,7 +115,6 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
     return diffDays > 0 ? diffDays : 1;
   };
 
-  // Monthly calculation
   const calcMonthly = () => {
     if (!monthlyStartDate) return { prorrateDays: 0, daysInMonth: 30, fullMonths: 0, totalAmount: modPrice, prorateAmount: 0, monthlyPrice: modPrice };
     const start = new Date(monthlyStartDate + "T00:00:00");
@@ -65,7 +141,6 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
     return { prorrateDays: remainingDays, daysInMonth, fullMonths, totalAmount, prorateAmount, monthlyPrice: modPrice };
   };
 
-  // Compute subtotal based on modality
   let subtotal = modPrice;
   let qtyLabel = `${formatCLP(modPrice)} × 1 ${modUnit}`;
   let monthlyInfo = null;
@@ -92,22 +167,26 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
   }
 
   const serviceFee = Math.round(subtotal * 0.05);
-  // Cash: conductor pays the host only the booking subtotal in cash. The 5% platform
-  // commission becomes new debt and prior debt stays untouched (paid later via card).
-  // Card/PayPal: everything is collected via the platform — host gets subtotal, platform
-  // gets the fee and clears any prior debt.
   const total = payMethod === "efectivo"
     ? subtotal
     : subtotal + serviceFee + userDebt;
 
-  // User chooses: installment (monthly) or upfront (pay all now)
   const canChooseBilling = modUnit === "mes" && monthlyInfo && monthlyInfo.fullMonths > 0;
   const isMonthlyInstallment = canChooseBilling && billingChoice === "installment";
   const firstPayment = isMonthlyInstallment ? (monthlyInfo.prorateAmount + Math.round(monthlyInfo.prorateAmount * 0.05)) : null;
   const monthlyInstallment = isMonthlyInstallment ? (monthlyInfo.monthlyPrice + Math.round(monthlyInfo.monthlyPrice * 0.05)) : null;
 
   const handleConfirmPay = async () => {
-    if (!user) return;
+    if (!user) {
+      setError("Debes iniciar sesión para reservar.");
+      return;
+    }
+    if (payMethod === "tarjeta" && !cardNum.trim()) {
+      setError("Ingresa el número de tarjeta para continuar.");
+      return;
+    }
+
+    setError("");
     setProcessing(true);
 
     const bookingData = {
@@ -122,10 +201,7 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       vehicle_plate: vehicleInfo?.plate || null,
       price: modPrice,
       price_unit: modUnit,
-      // Store the booking value (subtotal). Platform fee/debt are bookkeeping, not
-      // part of the booking record. The host's earnings are always the subtotal.
       total: subtotal,
-      // All bookings (hour/day/month) require host approval before being confirmed.
       status: "pending_approval",
       pay_method: payMethod,
       date: new Date().toISOString().split("T")[0],
@@ -153,54 +229,50 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       if (onBooking) {
         await onBooking(bookingData);
       }
-
-      // Credit/debt changes are deferred until the host approves the booking.
-      // The on_booking_approved DB trigger applies the right credit logic
-      // (clear debt for card/paypal, add 5% commission for cash) at that moment.
-
-      setTimeout(() => { setProcessing(false); setStep(2); }, 1000);
+      setProcessing(false);
+      setStep(2);
     } catch (err) {
       console.error(err);
       setProcessing(false);
-      alert("Error al procesar la reserva. Inténtalo de nuevo.");
+      setError(err?.message || "Error al procesar el pago. Inténtalo de nuevo.");
     }
   };
 
   if (step === 2) {
     return (
-      <div style={{ textAlign: "center", padding: "40px 0" }}>
-        <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#fef7f0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+      <div style={{ textAlign: "center", padding: `${SPACING.xl + 16}px 0` }}>
+        <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#fef7f0", display: "flex", alignItems: "center", justifyContent: "center", margin: `0 auto ${SPACING.xl}px` }}>
           <AlertCircle size={40} color="#c76d00" />
         </div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Solicitud enviada</h2>
-        <p style={{ color: "#555", fontSize: 15, marginBottom: 24 }}>Tu solicitud de reserva fue enviada al anfitrión. Recibirás una notificación cuando sea aprobada o rechazada.</p>
-        <div style={{ background: "#f7f7f7", borderRadius: 12, padding: 20, textAlign: "left", marginBottom: 24 }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>{listing.title}</div>
-          <div style={{ fontSize: 14, color: "#555" }}>Modalidad: {modUnit === "hora" ? "Por hora" : modUnit === "día" ? "Por día" : "Por mes"}</div>
+        <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.xs }}>Solicitud enviada</h2>
+        <p style={{ color: COLORS.muted, fontSize: FONT_SIZE.lg, marginBottom: SPACING.xl }}>Tu solicitud de reserva fue enviada al anfitrión. Recibirás una notificación cuando sea aprobada o rechazada.</p>
+        <div style={{ background: COLORS.bg, borderRadius: RADIUS.lg, padding: SPACING.lg, textAlign: "left", marginBottom: SPACING.xl }}>
+          <div style={{ fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.xs }}>{listing.title}</div>
+          <div style={mutedTextStyle}>Modalidad: {modUnit === "hora" ? "Por hora" : modUnit === "día" ? "Por día" : "Por mes"}</div>
           {modUnit === "hora" && bookingHours && (
-            <div style={{ fontSize: 14, color: "#555" }}>Horario: {bookingHours.startH}:{bookingHours.startM} ({bookingDate?.split("-").reverse().join("/")}) — {bookingHours.endH}:{bookingHours.endM} ({(bookingEndDate || bookingDate)?.split("-").reverse().join("/")}) ({calcHours().toLocaleString("es-CL", { maximumFractionDigits: 1 })}h)</div>
+            <div style={mutedTextStyle}>Horario: {bookingHours.startH}:{bookingHours.startM} ({bookingDate?.split("-").reverse().join("/")}) — {bookingHours.endH}:{bookingHours.endM} ({(bookingEndDate || bookingDate)?.split("-").reverse().join("/")}) ({calcHours().toLocaleString("es-CL", { maximumFractionDigits: 1 })}h)</div>
           )}
           {modUnit === "día" && bookingDate && (
-             <div style={{ fontSize: 14, color: "#555" }}>Estadía: {bookingDate.split("-").reverse().join("/")} — {(bookingEndDate || bookingDate).split("-").reverse().join("/")} | Llegada est: {bookingHours.arrivalH}:{bookingHours.arrivalM}</div>
+             <div style={mutedTextStyle}>Estadía: {bookingDate.split("-").reverse().join("/")} — {(bookingEndDate || bookingDate).split("-").reverse().join("/")} | Llegada est: {bookingHours.arrivalH}:{bookingHours.arrivalM}</div>
           )}
           {modUnit === "mes" && isMonthlyInstallment && (
             <>
-              <div style={{ fontSize: 14, color: "#555" }}>Primer cobro (prorrateo): {formatCLP(firstPayment)}</div>
-              <div style={{ fontSize: 14, color: "#555" }}>Cuota mensual: {formatCLP(monthlyInstallment)} × {monthlyInfo.fullMonths} mes{monthlyInfo.fullMonths > 1 ? "es" : ""}</div>
+              <div style={mutedTextStyle}>Primer cobro (prorrateo): {formatCLP(firstPayment)}</div>
+              <div style={mutedTextStyle}>Cuota mensual: {formatCLP(monthlyInstallment)} × {monthlyInfo.fullMonths} mes{monthlyInfo.fullMonths > 1 ? "es" : ""}</div>
             </>
           )}
-          {vehicleInfo?.name && <div style={{ fontSize: 14, color: "#555" }}>Vehículo: {vehicleInfo.name}{vehicleInfo.plate ? ` · Patente: ${vehicleInfo.plate}` : ""}</div>}
-          <div style={{ fontSize: 14, color: "#555" }}>Pago: {payMethod === "efectivo" ? "Efectivo" : payMethod === "tarjeta" ? "Tarjeta" : "PayPal"}</div>
-          <div style={{ fontSize: 14, color: "#555" }}>Acceso: {listing.access}</div>
-          <div style={{ fontSize: 14, color: "#555" }}>Total: {formatCLP(subtotal + serviceFee)}</div>
-          {payMethod === "efectivo" && <div style={{ fontSize: 13, color: "#b45309", marginTop: 8, fontWeight: 600 }}>Comisión pendiente — se descontará en tu próximo pago con tarjeta.</div>}
+          {vehicleInfo?.name && <div style={mutedTextStyle}>Vehículo: {vehicleInfo.name}{vehicleInfo.plate ? ` · Patente: ${vehicleInfo.plate}` : ""}</div>}
+          <div style={mutedTextStyle}>Pago: {payMethod === "efectivo" ? "Efectivo" : payMethod === "tarjeta" ? "Tarjeta" : "PayPal"}</div>
+          <div style={mutedTextStyle}>Acceso: {listing.access}</div>
+          <div style={mutedTextStyle}>Total: {formatCLP(subtotal + serviceFee)}</div>
+          {payMethod === "efectivo" && <div style={{ fontSize: FONT_SIZE.base, color: "#b45309", marginTop: SPACING.xs, fontWeight: FONT_WEIGHT.semibold }}>Comisión pendiente — se descontará en tu próximo pago con tarjeta.</div>}
           {isMonthlyInstallment && (
-            <div style={{ fontSize: 13, color: "#555", marginTop: 8, padding: 10, background: "#e8f5e8", borderRadius: 8 }}>
+            <div style={{ fontSize: FONT_SIZE.base, color: COLORS.muted, marginTop: SPACING.xs, padding: SPACING.sm, background: "#e8f5e8", borderRadius: RADIUS.md }}>
               El cobro se realizará mensualmente. En caso de impago, el anfitrión podrá cancelar la reserva.
             </div>
           )}
         </div>
-        <Btn primary onClick={onClose}>Volver al inicio</Btn>
+        <Btn primary onClick={() => { if (onClose) onClose(); }}>Volver al inicio</Btn>
       </div>
     );
   }
@@ -209,73 +281,74 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
     <div>
       {step === 0 && (
         <div>
-          <div style={{ display: "flex", gap: 16, padding: 16, background: "#f7f7f7", borderRadius: 12, marginBottom: 24 }}>
-            {(listing.photos || [])[0] ? <img src={listing.photos[0]} alt="" style={{ width: 100, height: 80, objectFit: "cover", borderRadius: 8 }} /> : <div style={{ width: 100, height: 80, borderRadius: 8, background: "#eee", display: "flex", alignItems: "center", justifyContent: "center" }}><Camera size={24} color="#bbb" /></div>}
+          <div style={cardBoxStyle}>
+            {(listing.photos || [])[0]
+              ? <img src={listing.photos[0]} alt="" style={{ width: 100, height: 80, objectFit: "cover", borderRadius: RADIUS.md }} />
+              : <div style={{ width: 100, height: 80, borderRadius: RADIUS.md, background: "#eee", display: "flex", alignItems: "center", justifyContent: "center" }}><Camera size={24} color="#bbb" /></div>}
             <div>
-              <div style={{ fontWeight: 600 }}>{listing.title}</div>
-              <div style={{ color: "#555", fontSize: 14 }}>{listing.location}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}><StarRating rating={listing.rating} /><span style={{ color: "#555", fontSize: 13 }}>({listing.reviewsList?.length ?? listing.reviews_count ?? 0})</span></div>
+              <div style={{ fontWeight: FONT_WEIGHT.semibold }}>{listing.title}</div>
+              <div style={{ color: COLORS.muted, fontSize: FONT_SIZE.md }}>{listing.location}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                <StarRating rating={listing.rating} />
+                <span style={{ color: COLORS.muted, fontSize: FONT_SIZE.base }}>({listing.reviewsList?.length ?? listing.reviews_count ?? 0})</span>
+              </div>
             </div>
           </div>
-          <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>Tu reserva</h3>
+          <h3 style={{ fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.xl, marginBottom: SPACING.md }}>Tu reserva</h3>
 
-          {/* Modality — read-only summary */}
-          <div style={{ padding: "12px 0", borderBottom: "1px solid #eee" }}>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>Modalidad</div>
-            <div style={{ fontSize: 14, color: "#555" }}>{mod.label} — {formatCLP(mod.price)}/{modUnit}</div>
+          <div style={sectionRowStyle}>
+            <div style={{ fontWeight: FONT_WEIGHT.semibold, marginBottom: 4 }}>Modalidad</div>
+            <div style={mutedTextStyle}>{mod.label} — {formatCLP(mod.price)}/{modUnit}</div>
           </div>
 
           {modUnit === "hora" && bookingHours && (
-            <div style={{ padding: "12px 0", borderBottom: "1px solid #eee" }}>
-              <div style={{ fontWeight: 600 }}>Rango horario</div>
-              <div style={{ fontSize: 14, color: "#555" }}>{bookingHours.startH}:{bookingHours.startM} — {bookingHours.endH}:{bookingHours.endM} ({calcHours().toLocaleString("es-CL", { maximumFractionDigits: 1 })} hora{calcHours() !== 1 ? "s" : ""})</div>
-              {bookingDate && <div style={{ fontSize: 13, color: "#555" }}>Fecha entrada: {new Date(bookingDate + "T00:00:00").toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</div>}
-              {bookingEndDate && <div style={{ fontSize: 13, color: "#555" }}>Fecha salida: {new Date(bookingEndDate + "T00:00:00").toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</div>}
+            <div style={sectionRowStyle}>
+              <div style={{ fontWeight: FONT_WEIGHT.semibold }}>Rango horario</div>
+              <div style={mutedTextStyle}>{bookingHours.startH}:{bookingHours.startM} — {bookingHours.endH}:{bookingHours.endM} ({calcHours().toLocaleString("es-CL", { maximumFractionDigits: 1 })} hora{calcHours() !== 1 ? "s" : ""})</div>
+              {bookingDate && <div style={smallMutedStyle}>Fecha entrada: {new Date(bookingDate + "T00:00:00").toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</div>}
+              {bookingEndDate && <div style={smallMutedStyle}>Fecha salida: {new Date(bookingEndDate + "T00:00:00").toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</div>}
             </div>
           )}
 
-          {/* Daily details */}
           {modUnit === "día" && (
-             <div style={{ padding: "12px 0", borderBottom: "1px solid #eee" }}>
-               <div style={{ fontWeight: 600 }}>Fechas de uso diario</div>
-               {bookingDate && <div style={{ fontSize: 14, color: "#555" }}>Entrada: {new Date(bookingDate + "T00:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" })} — Salida: {new Date((bookingEndDate || bookingDate) + "T00:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" })}</div>}
-               <div style={{ fontSize: 14, color: "#555", marginTop: 4 }}>Hora estimada de llegada: <span style={{ fontWeight: 600, color: BRAND_COLOR }}>{bookingHours.arrivalH}:{bookingHours.arrivalM} hrs</span></div>
-               <div style={{ fontSize: 12, color: "#777", marginTop: 4 }}>Nota: Recuerda respetar el horario diario estipulado por el anfitrión (De {listing.dimensions?.dailyStart || "06:00"} a {listing.dimensions?.dailyEnd || "22:00"}).</div>
+             <div style={sectionRowStyle}>
+               <div style={{ fontWeight: FONT_WEIGHT.semibold }}>Fechas de uso diario</div>
+               {bookingDate && <div style={mutedTextStyle}>Entrada: {new Date(bookingDate + "T00:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" })} — Salida: {new Date((bookingEndDate || bookingDate) + "T00:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" })}</div>}
+               <div style={{ ...mutedTextStyle, marginTop: 4 }}>Hora estimada de llegada: <span style={{ fontWeight: FONT_WEIGHT.semibold, color: BRAND_COLOR }}>{bookingHours.arrivalH}:{bookingHours.arrivalM} hrs</span></div>
+               <div style={{ fontSize: FONT_SIZE.sm, color: "#777", marginTop: 4 }}>Nota: Recuerda respetar el horario diario estipulado por el anfitrión (De {listing.dimensions?.dailyStart || "06:00"} a {listing.dimensions?.dailyEnd || "22:00"}).</div>
              </div>
           )}
 
-          {/* Monthly details */}
           {modUnit === "mes" && monthlyInfo && (
-            <div style={{ padding: "12px 0", borderBottom: "1px solid #eee" }}>
-              <div style={{ fontWeight: 600 }}>Detalle mensual</div>
+            <div style={sectionRowStyle}>
+              <div style={{ fontWeight: FONT_WEIGHT.semibold }}>Detalle mensual</div>
               {monthlyInfo.prorrateDays > 0 && monthlyInfo.prorrateDays < monthlyInfo.daysInMonth && (
-                <div style={{ fontSize: 14, color: "#555" }}>Prorrateo: {monthlyInfo.prorrateDays} de {monthlyInfo.daysInMonth} días → {formatCLP(monthlyInfo.prorateAmount)}</div>
+                <div style={mutedTextStyle}>Prorrateo: {monthlyInfo.prorrateDays} de {monthlyInfo.daysInMonth} días → {formatCLP(monthlyInfo.prorateAmount)}</div>
               )}
               {monthlyInfo.fullMonths > 0 && (
-                <div style={{ fontSize: 14, color: "#555" }}>{monthlyInfo.fullMonths} mes{monthlyInfo.fullMonths > 1 ? "es" : ""} completo{monthlyInfo.fullMonths > 1 ? "s" : ""} → {formatCLP(monthlyInfo.fullMonths * monthlyInfo.monthlyPrice)}</div>
+                <div style={mutedTextStyle}>{monthlyInfo.fullMonths} mes{monthlyInfo.fullMonths > 1 ? "es" : ""} completo{monthlyInfo.fullMonths > 1 ? "s" : ""} → {formatCLP(monthlyInfo.fullMonths * monthlyInfo.monthlyPrice)}</div>
               )}
             </div>
           )}
 
-          {/* Billing choice for monthly */}
           {canChooseBilling && (
-            <div style={{ padding: "12px 0", borderBottom: "1px solid #eee" }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>Forma de cobro</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div onClick={() => setBillingChoice("installment")} style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, border: billingChoice === "installment" ? `2px solid ${BRAND_COLOR}` : "2px solid #eee", cursor: "pointer", background: billingChoice === "installment" ? "#fff5f7" : "#fff", transition: "all .15s" }}>
+            <div style={sectionRowStyle}>
+              <div style={{ fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.xs }}>Forma de cobro</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACING.xs }}>
+                <div onClick={() => setBillingChoice("installment")} style={billingOption(billingChoice === "installment")}>
                   <div style={{ width: 20, height: 20, borderRadius: "50%", border: billingChoice === "installment" ? `6px solid ${BRAND_COLOR}` : "2px solid #ccc", flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>Pago mensual (cuotas)</div>
-                    <div style={{ fontSize: 12, color: "#555" }}>
+                    <div style={{ fontWeight: FONT_WEIGHT.semibold, fontSize: FONT_SIZE.md }}>Pago mensual (cuotas)</div>
+                    <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.muted }}>
                       Hoy pagas el prorrateo ({formatCLP(monthlyInfo.prorateAmount + Math.round(monthlyInfo.prorateAmount * 0.05))}), luego {formatCLP(monthlyInfo.monthlyPrice + Math.round(monthlyInfo.monthlyPrice * 0.05))}/mes
                     </div>
                   </div>
                 </div>
-                <div onClick={() => setBillingChoice("upfront")} style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, border: billingChoice === "upfront" ? `2px solid ${BRAND_COLOR}` : "2px solid #eee", cursor: "pointer", background: billingChoice === "upfront" ? "#fff5f7" : "#fff", transition: "all .15s" }}>
+                <div onClick={() => setBillingChoice("upfront")} style={billingOption(billingChoice === "upfront")}>
                   <div style={{ width: 20, height: 20, borderRadius: "50%", border: billingChoice === "upfront" ? `6px solid ${BRAND_COLOR}` : "2px solid #ccc", flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>Pago total anticipado</div>
-                    <div style={{ fontSize: 12, color: "#555" }}>
+                    <div style={{ fontWeight: FONT_WEIGHT.semibold, fontSize: FONT_SIZE.md }}>Pago total anticipado</div>
+                    <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.muted }}>
                       Pagas todo ahora: {formatCLP(subtotal + Math.round(subtotal * 0.05))}
                     </div>
                   </div>
@@ -284,31 +357,30 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
             </div>
           )}
 
-          {/* Vehicle info */}
-          <div style={{ padding: "12px 0", borderBottom: "1px solid #eee" }}>
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>Vehículo</div>
+          <div style={sectionRowStyle}>
+            <div style={{ fontWeight: FONT_WEIGHT.semibold, marginBottom: 4 }}>Vehículo</div>
             {vehicleInfo?.name ? (
               <div>
-                <div style={{ fontSize: 14, color: "#555" }}>{vehicleInfo.name}{vehicleInfo.type ? ` · ${vehicleInfo.type}` : ""}</div>
-                {vehicleInfo.plate && <div style={{ fontSize: 13, color: "#777", marginTop: 2 }}>Patente: <strong style={{ color: "#222" }}>{vehicleInfo.plate}</strong></div>}
+                <div style={mutedTextStyle}>{vehicleInfo.name}{vehicleInfo.type ? ` · ${vehicleInfo.type}` : ""}</div>
+                {vehicleInfo.plate && <div style={{ fontSize: FONT_SIZE.base, color: "#777", marginTop: 2 }}>Patente: <strong style={{ color: COLORS.text }}>{vehicleInfo.plate}</strong></div>}
               </div>
             ) : (
-              <div style={{ fontSize: 14, color: "#b91c1c" }}>No seleccionaste un vehículo</div>
+              <div style={{ fontSize: FONT_SIZE.md, color: COLORS.danger }}>No seleccionaste un vehículo</div>
             )}
           </div>
-          {!user && <div style={{ marginBottom: 16, padding: 12, background: "#fef2f2", borderRadius: 8, color: "#b91c1c", fontSize: 13, fontWeight: 600 }}>Debes iniciar sesión para reservar.</div>}
-          <Btn primary full onClick={() => setStep(1)} style={{ marginTop: 24 }} disabled={!user}>Continuar al pago</Btn>
+          {!user && <div style={errorBoxStyle}>Debes iniciar sesión para reservar.</div>}
+          <Btn primary full onClick={() => setStep(1)} style={{ marginTop: SPACING.xl }} disabled={!user}>Continuar al pago</Btn>
         </div>
       )}
       {step === 1 && (
         <div>
-          <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 16 }}>Pagar con</h3>
-          <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <h3 style={{ fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.xl, marginBottom: SPACING.md }}>Pagar con</h3>
+          <div style={{ display: "flex", gap: SPACING.sm, marginBottom: SPACING.lg }}>
             {[{ id: "tarjeta", l: "Tarjeta" }, { id: "paypal", l: "PayPal" }, { id: "efectivo", l: "Efectivo" }].map(m => (
-              <Pill 
-                key={m.id} 
-                active={payMethod === m.id} 
-                onClick={() => setPayMethod(m.id)} 
+              <Pill
+                key={m.id}
+                active={payMethod === m.id}
+                onClick={() => setPayMethod(m.id)}
               >
                 {m.l}
               </Pill>
@@ -316,9 +388,9 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
           </div>
 
           {payMethod === "tarjeta" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: SPACING.sm, marginBottom: SPACING.xl }}>
               <Input icon={CreditCard} placeholder="Número de tarjeta" value={cardNum} onChange={e => setCardNum(e.target.value)} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACING.sm }}>
                 <Input placeholder="MM/AA" />
                 <Input icon={Lock} placeholder="CVV" />
               </div>
@@ -326,22 +398,21 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
             </div>
           )}
           {payMethod === "paypal" && (
-            <div style={{ padding: 24, textAlign: "center", background: "#f7f7f7", borderRadius: 12, marginBottom: 24 }}>
-              <p style={{ fontSize: 14, color: "#555" }}>Serás redirigido a PayPal para completar el pago.</p>
+            <div style={{ padding: SPACING.xl, textAlign: "center", background: COLORS.bg, borderRadius: RADIUS.lg, marginBottom: SPACING.xl }}>
+              <p style={{ fontSize: FONT_SIZE.md, color: COLORS.muted }}>Serás redirigido a PayPal para completar el pago.</p>
             </div>
           )}
           {payMethod === "efectivo" && (
-            <div style={{ padding: 16, background: "#fffbeb", borderRadius: 12, border: "1px solid #f59e0b33", marginBottom: 24 }}>
-              <p style={{ fontSize: 14, color: "#92400e", fontWeight: 600, marginBottom: 8 }}>Pago en efectivo al anfitrión</p>
-              <p style={{ fontSize: 13, color: "#78350f" }}>Pagarás directamente al anfitrión. La comisión de servicio quedará como saldo pendiente y se descontará automáticamente en tu próximo pago con tarjeta.</p>
+            <div style={warningBoxStyle}>
+              <p style={{ fontSize: FONT_SIZE.md, color: "#92400e", fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.xs }}>Pago en efectivo al anfitrión</p>
+              <p style={{ fontSize: FONT_SIZE.base, color: "#78350f" }}>Pagarás directamente al anfitrión. La comisión de servicio quedará como saldo pendiente y se descontará automáticamente en tu próximo pago con tarjeta.</p>
             </div>
           )}
 
-          {/* Credit notice */}
           {userDebt > 0 && (
-            <div style={{ padding: 12, background: "#fef2f2", borderRadius: 8, marginBottom: 16, fontSize: 13, border: "1px solid #fca5a5" }}>
-              <span style={{ fontWeight: 700, color: "#b91c1c" }}>Saldo pendiente: {formatCLP(userDebt)}</span>
-              <span style={{ color: "#555" }}>
+            <div style={debtNoticeStyle}>
+              <span style={{ fontWeight: FONT_WEIGHT.bold, color: COLORS.danger }}>Saldo pendiente: {formatCLP(userDebt)}</span>
+              <span style={{ color: COLORS.muted }}>
                 {payMethod === "efectivo"
                   ? " — No se cobra ahora. Quedará pendiente hasta tu próximo pago con tarjeta."
                   : " — Se sumará al total a pagar ahora para regularizar tu cuenta."}
@@ -349,21 +420,21 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
             </div>
           )}
 
-          <div style={{ background: "#f7f7f7", borderRadius: 12, padding: 16, marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span>{qtyLabel}</span><span>{formatCLP(subtotal)}</span></div>
+          <div style={summaryBoxStyle}>
+            <div style={summaryRowStyle}><span>{qtyLabel}</span><span>{formatCLP(subtotal)}</span></div>
             {isMonthlyInstallment && (
               <>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 13, color: "#555" }}><span>  └ Prorrateo primer mes</span><span>{formatCLP(monthlyInfo.prorateAmount)}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13, color: "#555" }}><span>  └ {monthlyInfo.fullMonths} cuota{monthlyInfo.fullMonths > 1 ? "s" : ""} de {formatCLP(monthlyInfo.monthlyPrice)}</span><span>{formatCLP(monthlyInfo.fullMonths * monthlyInfo.monthlyPrice)}</span></div>
+                <div style={{ ...summaryRowStyle, marginBottom: 4, fontSize: FONT_SIZE.base, color: COLORS.muted }}><span>  └ Prorrateo primer mes</span><span>{formatCLP(monthlyInfo.prorateAmount)}</span></div>
+                <div style={{ ...summaryRowStyle, fontSize: FONT_SIZE.base, color: COLORS.muted }}><span>  └ {monthlyInfo.fullMonths} cuota{monthlyInfo.fullMonths > 1 ? "s" : ""} de {formatCLP(monthlyInfo.monthlyPrice)}</span><span>{formatCLP(monthlyInfo.fullMonths * monthlyInfo.monthlyPrice)}</span></div>
               </>
             )}
             {payMethod !== "efectivo" && (
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span>Tarifa de servicio (5%)</span><span>{formatCLP(serviceFee)}</span></div>
+              <div style={summaryRowStyle}><span>Tarifa de servicio (5%)</span><span>{formatCLP(serviceFee)}</span></div>
             )}
             {payMethod !== "efectivo" && userDebt > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, color: "#b91c1c", fontWeight: 600 }}><span>Saldo pendiente anterior</span><span>+{formatCLP(userDebt)}</span></div>
+              <div style={{ ...summaryRowStyle, color: COLORS.danger, fontWeight: FONT_WEIGHT.semibold }}><span>Saldo pendiente anterior</span><span>+{formatCLP(userDebt)}</span></div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: "1px solid #ddd", paddingTop: 12, marginTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: FONT_WEIGHT.bold, borderTop: `1px solid ${COLORS.border}`, paddingTop: SPACING.sm, marginTop: SPACING.xs }}>
               {isMonthlyInstallment ? (
                 <>
                   <span>{payMethod === "efectivo" ? "Pagar al anfitrión hoy (efectivo)" : "Total a pagar hoy"}</span>
@@ -377,29 +448,36 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
               )}
             </div>
             {payMethod === "efectivo" && (
-              <div style={{ marginTop: 10, padding: 10, background: "#fffbeb", borderRadius: 8, fontSize: 12, color: "#78350f" }}>
+              <div style={{ marginTop: SPACING.sm, padding: SPACING.sm, background: "#fffbeb", borderRadius: RADIUS.md, fontSize: FONT_SIZE.sm, color: "#78350f" }}>
                 Comisión plataforma (5% = {formatCLP(serviceFee)}) se sumará a tu saldo pendiente: {formatCLP(userDebt + serviceFee)}.
               </div>
             )}
             {isMonthlyInstallment && (
-              <div style={{ fontSize: 13, color: "#555", marginTop: 8 }}>
+              <div style={{ fontSize: FONT_SIZE.base, color: COLORS.muted, marginTop: SPACING.xs }}>
                 Luego: {formatCLP(monthlyInstallment)} /mes × {monthlyInfo.fullMonths} mes{monthlyInfo.fullMonths > 1 ? "es" : ""}
               </div>
             )}
           </div>
 
           {isMonthlyInstallment && (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16, padding: 14, background: "#f0f9ff", borderRadius: 12, border: "1px solid #bae6fd" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: SPACING.sm, marginBottom: SPACING.md, padding: 14, background: "#f0f9ff", borderRadius: RADIUS.lg, border: "1px solid #bae6fd" }}>
               <Info size={18} color="#0369a1" style={{ flexShrink: 0, marginTop: 2 }} />
-              <div style={{ fontSize: 13, color: "#0c4a6e" }}>
+              <div style={{ fontSize: FONT_SIZE.base, color: "#0c4a6e" }}>
                 <strong>Cobro en cuotas mensuales:</strong> Se realizará el cobro mensual automático a tu método de pago seleccionado. En caso de impago, el anfitrión podrá cancelar la reserva de forma inmediata.
               </div>
             </div>
           )}
 
+          {error && <div style={errorBoxStyle} role="alert">{error}</div>}
 
-          <Btn primary full style={{ marginTop: 24 }} onClick={handleConfirmPay} disabled={processing}>
-            {processing ? "Procesando..." : isMonthlyInstallment
+          <Btn
+            primary
+            full
+            style={{ marginTop: SPACING.xl, opacity: processing ? 0.7 : 1 }}
+            onClick={handleConfirmPay}
+            disabled={processing}
+          >
+            {processing ? "Procesando pago..." : isMonthlyInstallment
               ? `Confirmar (hoy ${formatCLP(payMethod === "efectivo" ? monthlyInfo.prorateAmount : firstPayment + userDebt)})`
               : payMethod === "efectivo"
                 ? `Confirmar reserva (${formatCLP(total)} en efectivo)`

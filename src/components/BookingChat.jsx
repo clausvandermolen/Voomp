@@ -9,6 +9,8 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const isHost = String(user?.id) === String(booking.hostId || booking.host_id);
@@ -17,19 +19,27 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
   const chatKey = makeChatKey(user.id, otherId);
 
   useEffect(() => {
+    let isMounted = true;
+    setError(null);
     // Initial load
     supabase
       .from('messages')
       .select('*')
       .eq('chat_key', chatKey)
       .order('created_at', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error: err }) => {
+        if (!isMounted) return;
+        if (err) {
+          setError("Error cargando mensajes");
+          setLoading(false);
+          return;
+        }
         setMessages(data || []);
-        setLoading(false);
         if (data && data.length > 0 && onMarkRead) {
           const maxId = Math.max(...data.map(m => m.id));
           onMarkRead(chatKey, maxId);
         }
+        setLoading(false);
       });
 
     // Realtime subscription
@@ -40,6 +50,7 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
         table: 'messages',
         filter: `chat_key=eq.${chatKey}`
       }, (payload) => {
+        if (!isMounted) return;
         setMessages(prev => {
           if (prev.some(m => m.id === payload.new.id)) return prev;
           return [...prev, payload.new];
@@ -48,8 +59,11 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [chatKey]);
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [chatKey, onMarkRead]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,6 +71,8 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
 
   const handleSend = async () => {
     if (!newMsg.trim()) return;
+    setSending(true);
+    setError(null);
     const msg = {
       chat_key: chatKey,
       booking_id: booking.id,
@@ -66,9 +82,14 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
       text: newMsg.trim(),
     };
     try {
-      await supabase.from('messages').insert(msg);
-    } catch (e) { /* silent */ }
-    setNewMsg("");
+      const { error: err } = await supabase.from('messages').insert(msg);
+      if (err) throw err;
+      setNewMsg("");
+    } catch (e) {
+      setError("Error enviando mensaje. Intenta de nuevo.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -109,10 +130,17 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Error */}
+        {error && (
+          <div style={{ padding: "8px 16px", background: "#fee2e2", color: "#b91c1c", fontSize: 12, borderTop: "1px solid #fecaca" }}>
+            {error}
+          </div>
+        )}
+
         {/* Input */}
         <div style={{ padding: "12px 16px", borderTop: "1px solid #eee", display: "flex", gap: 8 }}>
-          <input value={newMsg} onChange={e => setNewMsg(e.target.value)} placeholder="Escribe un mensaje..." onKeyDown={e => { if (e.key === "Enter") handleSend(); }} style={{ flex: 1, padding: "10px 14px", borderRadius: 24, border: "1px solid #ddd", fontSize: 14, fontFamily: "inherit", outline: "none" }} />
-          <button onClick={handleSend} style={{ width: 38, height: 38, borderRadius: "50%", background: BRAND_COLOR, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <input value={newMsg} onChange={e => setNewMsg(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !sending) handleSend(); }} placeholder="Escribe un mensaje..." disabled={sending} style={{ flex: 1, padding: "10px 14px", borderRadius: 24, border: "1px solid #ddd", fontSize: 14, fontFamily: "inherit", outline: "none", opacity: sending ? 0.6 : 1 }} />
+          <button onClick={handleSend} disabled={sending} style={{ width: 38, height: 38, borderRadius: "50%", background: BRAND_COLOR, border: "none", cursor: sending ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: sending ? 0.6 : 1 }}>
             <Send size={15} color="#fff" />
           </button>
         </div>

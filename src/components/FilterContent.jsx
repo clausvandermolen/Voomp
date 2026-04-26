@@ -52,9 +52,16 @@ const FilterContent = ({ filters, onApply }) => {
           <div style={{ fontWeight: 600 }}>Solo con carga eléctrica</div>
           <div style={{ fontSize: 13, color: "#555" }}>Mostrar solo espacios con cargador EV</div>
         </div>
-        <div onClick={() => setEvOnly(!evOnly)} style={{ width: 48, height: 28, borderRadius: 14, background: evOnly ? BRAND_COLOR : "#ccc", cursor: "pointer", transition: "background .2s", position: "relative" }}>
+        <button
+          onClick={() => setEvOnly(!evOnly)}
+          role="switch"
+          aria-checked={evOnly}
+          aria-label="Solo con carga eléctrica"
+          onKeyDown={(e) => e.key === 'Enter' && setEvOnly(!evOnly)}
+          style={{ width: 48, height: 28, borderRadius: 14, background: evOnly ? BRAND_COLOR : "#ccc", cursor: "pointer", transition: "background .2s", position: "relative", border: "none", padding: 0 }}
+        >
           <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: evOnly ? 22 : 2, transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
-        </div>
+        </button>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #eee", paddingTop: 20 }}>

@@ -7,6 +7,7 @@ import { useListings } from "./contexts/ListingsContext";
 import { useBookings } from "./contexts/BookingsContext";
 import { useMessages } from "./contexts/MessagesContext";
 import { useNotifications } from "./contexts/NotificationsContext";
+import { UserProvider } from "./contexts/UserContext";
 import { Modal, ErrorBoundary } from "./components/ui";
 import Header from "./components/Header";
 import CategoryBar from "./components/CategoryBar";
@@ -297,14 +298,15 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div style={{ fontFamily: "'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif", color: "#222", minHeight: "100vh", background: "#fff" }}>
-        <Modal open={filterOpen} onClose={() => setFilterOpen(false)} title="Filtros" wide>
-          <FilterContent filters={filters} onApply={(f) => { setFilters(f); setFilterOpen(false); }} />
-        </Modal>
+      <UserProvider>
+        <div style={{ fontFamily: "'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif", color: "#222", minHeight: "100vh", background: "#fff" }}>
+          <Modal open={filterOpen} onClose={() => setFilterOpen(false)} title="Filtros" wide>
+            <FilterContent filters={filters} onApply={(f) => { setFilters(f); setFilterOpen(false); }} />
+          </Modal>
 
-        <AuthModal open={authModal.open} onClose={() => setAuthModal({ ...authModal, open: false })} onSuccess={handleAuthSuccess} initialMode={authModal.mode} />
+          <AuthModal open={authModal.open} onClose={() => setAuthModal({ ...authModal, open: false })} onSuccess={handleAuthSuccess} initialMode={authModal.mode} />
 
-        <Routes>
+          <Routes>
           <Route path="/" element={
             <LandingPage onEnter={() => navigate("home")} onRegister={() => setAuthModal({ open: true, mode: "register" })} onLogin={() => setAuthModal({ open: true, mode: "login" })} />
           } />
@@ -350,7 +352,8 @@ export default function App() {
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </div>
+        </div>
+      </UserProvider>
     </ErrorBoundary>
   );
 }

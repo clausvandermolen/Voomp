@@ -1,0 +1,23 @@
+{
+  "env": {
+    "DEEPSEEK_API_KEY": "sk-7dd9cdb80890499db21e595b2463e108",
+    "KIKI_AGENT": "deepseek",
+    "KIKI_MODEL_DEFAULT": "deepseek-v4-flash",
+    "KIKI_MODEL_HEAVY": "deepseek-v4-pro"
+  },
+  "agent": "kiki-deepseek",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "SessionStart",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Kiki activado con Deepseek: sk-7dd...108' && exit 0",
+            "statusMessage": "Inicializando Kiki con Deepseek"
+          }
+        ]
+      }
+    ]
+  }
+}

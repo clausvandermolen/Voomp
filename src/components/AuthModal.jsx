@@ -18,6 +18,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   const [showPass, setShowPass] = useState(false);
   const [showPassConfirm, setShowPassConfirm] = useState(false);
   const [showLoginPass, setShowLoginPass] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const captchaRef = useRef(null);
   const captchaResolveRef = useRef(null);
 
@@ -32,6 +33,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
   });
 
   const handleRegister = async () => {
+    if (submitting) return;
     setError("");
     if (!form.firstName || !form.lastName1) return setError("Completa tu nombre y apellido paterno.");
     if (!form.email || !form.email.includes("@")) return setError("Ingresa un correo electrónico válido.");
@@ -42,6 +44,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
     if (!form.password || form.password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
     if (form.password !== form.passwordConfirm) return setError("Las contraseñas no coinciden.");
 
+    setSubmitting(true);
     try {
       const token = await executeCaptcha();
       const { error: signUpError } = await supabase.auth.signUp({
@@ -60,20 +63,22 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
           }
         }
       });
-      if (signUpError) return setError(signUpError.message);
+      if (signUpError) { setError(signUpError.message); return; }
       setSuccess(true);
       setTimeout(() => { onSuccess(); }, 500);
-    } catch(err) {
+    } catch {
       setError("Error al conectar con el servidor.");
     } finally {
       captchaRef.current?.resetCaptcha();
-      setCaptchaToken(null);
+      setSubmitting(false);
     }
   };
 
   const handleLogin = async () => {
+    if (submitting) return;
     setError("");
     if (!loginForm.email || !loginForm.password) return setError("Completa todos los campos.");
+    setSubmitting(true);
     try {
       const token = await executeCaptcha();
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -81,13 +86,13 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
         password: loginForm.password,
         options: { captchaToken: token ?? undefined },
       });
-      if (signInError) return setError("Credenciales incorrectas.");
+      if (signInError) { setError("Credenciales incorrectas."); return; }
       onSuccess();
-    } catch(err) {
+    } catch {
       setError("Error al conectar con el servidor.");
     } finally {
       captchaRef.current?.resetCaptcha();
-      setCaptchaToken(null);
+      setSubmitting(false);
     }
   };
 
@@ -107,7 +112,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
     <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px 12px" }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 600, maxHeight: "92vh", overflow: "auto", animation: "fadeIn .3s" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 28px", borderBottom: "1px solid #eee", position: "sticky", top: 0, background: "#fff", zIndex: 2, borderRadius: "20px 20px 0 0" }}>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>
+          <button onClick={onClose} aria-label="Cerrar" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} /></button>
           <span style={{ fontWeight: 700, fontSize: 16 }}>{mode === "register" ? "Crear cuenta" : "Iniciar sesión"}</span>
           <div style={{ width: 28 }} />
         </div>
@@ -184,7 +189,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
 
               {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 16px", fontSize: 14, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}><AlertCircle size={16} /> {error}</div>}
 
-              <Btn primary full onClick={handleRegister} style={{ padding: "14px 24px", fontSize: 16, borderRadius: 12, marginTop: 8 }}>Crear mi cuenta</Btn>
+              <Btn primary full onClick={handleRegister} disabled={submitting} style={{ padding: "14px 24px", fontSize: 16, borderRadius: 12, marginTop: 8 }}>{submitting ? "Creando cuenta..." : "Crear mi cuenta"}</Btn>
 
               <p style={{ textAlign: "center", fontSize: 12, color: "#555", lineHeight: 1.5 }}>
                 Al registrarte aceptas los <span style={{ textDecoration: "underline", cursor: "pointer" }}>Términos de servicio</span> y la <span style={{ textDecoration: "underline", cursor: "pointer" }}>Política de privacidad</span> de Voomp.
@@ -207,7 +212,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
 
               {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 16px", fontSize: 14, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}><AlertCircle size={16} /> {error}</div>}
 
-              <Btn primary full onClick={handleLogin} style={{ padding: "14px 24px", fontSize: 16, borderRadius: 12, marginTop: 8 }}>Iniciar sesión</Btn>
+              <Btn primary full onClick={handleLogin} disabled={submitting} style={{ padding: "14px 24px", fontSize: 16, borderRadius: 12, marginTop: 8 }}>{submitting ? "Iniciando sesión..." : "Iniciar sesión"}</Btn>
             </form>
           )}
 
