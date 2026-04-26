@@ -8,7 +8,7 @@ const CardCarousel = ({ photos = [], onFav, isFav }) => {
   return (
     <div style={{ position: "relative", width: "100%", aspectRatio: "1/0.95", borderRadius: 12, overflow: "hidden" }}>
       {hasPhotos ? (
-        <img src={photos[idx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img src={photos[idx]} alt={`Foto ${idx + 1} del espacio`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : (
         <div style={{ width: "100%", height: "100%", background: "#f0f0f0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#aaa" }}>
           <Camera size={36} />
