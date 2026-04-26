@@ -22,6 +22,7 @@ import ProfilePage from "./pages/ProfilePage";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import ConocenosPage from "./pages/ConocenosPage";
 
 function ListingDetailWrapper({ headerProps, listings, selectedListing, navigate, user, setListings, handleUpdateUser, handleBooking, bookings, setEditingListing }) {
   const { id } = useParams();
@@ -368,6 +369,9 @@ export default function App() {
           } />
           <Route path="/listing/:id/:slug" element={
             <ListingDetailWrapper headerProps={headerProps} listings={listings} selectedListing={selectedListing} navigate={navigate} user={user} setListings={setListings} handleUpdateUser={handleUpdateUser} handleBooking={handleBooking} bookings={bookings} setEditingListing={setEditingListing} />
+          } />
+          <Route path="/conocenos" element={
+            <ConocenosPage />
           } />
           <Route path="/como-funciona" element={
             <HowItWorksPage onNavigate={navigate} />
