@@ -6,6 +6,7 @@ import { formatCLP } from "../utils/format";
 import { StarRating, Avatar, Badge, Btn, Pill, Modal } from "../components/ui";
 import PhotoGallery from "../components/PhotoGallery";
 import BookingConfirmation from "../components/BookingConfirmation";
+import LastMileNavigation from "../components/navigation/LastMileNavigation";
 import { supabase } from "../lib/supabase";
 import { useNotifications } from "../contexts/NotificationsContext";
 import { useListings } from "../contexts/ListingsContext";
@@ -635,7 +636,11 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, setListings, onU
               )}
               <div style={{ display: "flex", gap: SPACING.lg }}>
                 <MapPin size={24} />
-                <div><div style={{ fontWeight: FONT_WEIGHT.semibold }}>Excelente ubicación</div><div style={{ color: COLORS.muted, fontSize: FONT_SIZE.md, marginTop: SPACING.xs }}>{l.address}</div></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: FONT_WEIGHT.semibold }}>Excelente ubicación</div>
+                  <div style={{ color: COLORS.muted, fontSize: FONT_SIZE.md, marginTop: SPACING.xs, marginBottom: SPACING.md }}>{l.address}</div>
+                  <LastMileNavigation latitude={l.lat} longitude={l.lng} address={l.address} />
+                </div>
               </div>
               <div style={{ display: "flex", gap: SPACING.lg }}>
                 {l.access === "Control remoto" ? <Wifi size={24} /> : l.access === "App móvil" ? <Phone size={24} /> : <Lock size={24} />}
