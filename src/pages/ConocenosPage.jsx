@@ -1,6 +1,7 @@
-import { Car, Shield, MapPin, DollarSign, Zap, Check, ArrowLeft } from "lucide-react";
+import { Shield, MapPin, DollarSign, Zap, Check, ArrowLeft } from "lucide-react";
 import { BRAND_COLOR, BRAND_GRADIENT } from "../constants";
 import { useNavigate } from "react-router-dom";
+import { VoompLogoBox } from "../components/VoompLogo";
 
 const NAVY = "#1A3C5E";
 const SAFETY_BLUE = "#2563EB";
@@ -58,9 +59,7 @@ const ConocenosPage = ({ onNavigate }) => {
           Volver
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: BRAND_GRADIENT, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Car size={16} color="#fff" />
-          </div>
+          <VoompLogoBox size={30} radius={8} instanceId="conocenos-nav" />
           <span style={{ fontWeight: 800, fontSize: 18, color: BRAND_COLOR }}>Voomp</span>
         </div>
       </nav>
@@ -203,9 +202,7 @@ const ConocenosPage = ({ onNavigate }) => {
       {/* Footer */}
       <footer style={{ background: "#0F2137", padding: "32px 24px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: BRAND_GRADIENT, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Car size={13} color="#fff" />
-          </div>
+          <VoompLogoBox size={26} radius={7} instanceId="conocenos-footer" />
           <span style={{ fontWeight: 800, fontSize: 17, color: "#fff" }}>Voomp</span>
         </div>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,.35)" }}>© 2026 Voomp, Inc. Todos los derechos reservados.</p>
