@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /profile
+Disallow: /messages
+Disallow: /api/
+
+Sitemap: https://voomp.cl/sitemap.xml

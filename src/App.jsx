@@ -19,6 +19,9 @@ import CreateListingPage from "./pages/CreateListingPage";
 import MessagesPage from "./pages/MessagesPage";
 import ListingDetailPage from "./pages/ListingDetailPage";
 import ProfilePage from "./pages/ProfilePage";
+import HowItWorksPage from "./pages/HowItWorksPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 
 function ListingDetailWrapper({ headerProps, listings, selectedListing, navigate, user, setListings, handleUpdateUser, handleBooking, bookings, setEditingListing }) {
   const { id } = useParams();
@@ -310,6 +313,12 @@ export default function App() {
           <Route path="/" element={
             <LandingPage onEnter={() => navigate("home")} onRegister={() => setAuthModal({ open: true, mode: "register" })} onLogin={() => setAuthModal({ open: true, mode: "login" })} />
           } />
+          <Route path="/register" element={
+            <LandingPage onEnter={() => navigate("home")} onRegister={() => setAuthModal({ open: true, mode: "register" })} onLogin={() => setAuthModal({ open: true, mode: "login" })} />
+          } />
+          <Route path="/entrar" element={
+            <LandingPage onEnter={() => navigate("home")} onRegister={() => setAuthModal({ open: true, mode: "register" })} onLogin={() => setAuthModal({ open: true, mode: "login" })} />
+          } />
           <Route path="/home" element={
             <>
               <Header {...headerProps} />
@@ -317,7 +326,17 @@ export default function App() {
               <HomePage listings={filteredListings} onSelect={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onFav={toggleFavorite} showMap={showMap} mapViewState={mapViewState} onMapViewChange={setMapViewState} />
             </>
           } />
+          <Route path="/explorar" element={
+            <>
+              <Header {...headerProps} />
+              <CategoryBar onFilter={() => setFilterOpen(true)} showMap={showMap} setShowMap={setShowMap} />
+              <HomePage listings={filteredListings} onSelect={(l) => { setSelectedListing(l); navigate("listing", { id: l.id, title: l.title }); }} onFav={toggleFavorite} showMap={showMap} mapViewState={mapViewState} onMapViewChange={setMapViewState} />
+            </>
+          } />
           <Route path="/create" element={
+            <CreateListingPage onBack={() => { setEditingListing(null); navigate("home"); }} onPublish={handlePublish} onDeletePhoto={handleDeletePhoto} initialData={editingListing} />
+          } />
+          <Route path="/publicar" element={
             <CreateListingPage onBack={() => { setEditingListing(null); navigate("home"); }} onPublish={handlePublish} onDeletePhoto={handleDeletePhoto} initialData={editingListing} />
           } />
           <Route path="/messages" element={
@@ -349,6 +368,15 @@ export default function App() {
           } />
           <Route path="/listing/:id/:slug" element={
             <ListingDetailWrapper headerProps={headerProps} listings={listings} selectedListing={selectedListing} navigate={navigate} user={user} setListings={setListings} handleUpdateUser={handleUpdateUser} handleBooking={handleBooking} bookings={bookings} setEditingListing={setEditingListing} />
+          } />
+          <Route path="/como-funciona" element={
+            <HowItWorksPage onNavigate={navigate} />
+          } />
+          <Route path="/terminos" element={
+            <TermsPage onNavigate={navigate} />
+          } />
+          <Route path="/privacidad" element={
+            <PrivacyPage onNavigate={navigate} />
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
