@@ -1,33 +1,33 @@
 import { BRAND_GRADIENT } from "../constants";
 
-// V de ángulo cerrado + círculo completo que la enmarca (concepto pin/marca de lugar)
-// V converge desde (6,4)/(54,4) hasta el punto (30,48) dentro del círculo
-// Círculo: centro (30,38) r=19 — los brazos de la V lo cruzan en ~(17,25)/(43,25)
+// V centrada + elipse acostada en perspectiva, sin contacto — pin de mapa 3D
+// ViewBox 60×70. V: (14,7)→(30,47)/(46,7)→(30,47). Elipse: cx=30 cy=61 rx=15 ry=5.5
+// Gap verificado: 4px entre punta de V y borde superior de elipse. Márgenes: 4.25 top / 1.75 bottom.
 export const VoompMark = ({ height = 34, variant = "white", instanceId = "a" }) => {
-  const width = height; // viewBox cuadrado 60×60
+  const width = Math.round(height * (60 / 70)); // viewBox 60×70
   const gradId = `vg-${instanceId}`;
   const isWhite = variant === "white";
   const stroke = isWhite ? "white" : `url(#${gradId})`;
-  const sw = 4.5;
 
   return (
-    <svg width={width} height={height} viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={width} height={height} viewBox="0 0 60 70" fill="none" xmlns="http://www.w3.org/2000/svg">
       {!isWhite && (
         <defs>
-          <linearGradient id={gradId} x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+          <linearGradient id={gradId} x1="0" y1="0" x2="60" y2="70" gradientUnits="userSpaceOnUse">
             <stop stopColor="#FF385C" />
             <stop offset="1" stopColor="#FF6B35" />
           </linearGradient>
         </defs>
       )}
-      {/* Círculo que enmarca la V — dibujado primero, queda debajo */}
-      <circle cx="30" cy="38" r="19" stroke={stroke} strokeWidth={sw} fill="none" />
-      {/* Brazo izquierdo de la V — sobre el círculo */}
-      <line x1="6" y1="4" x2="30" y2="50"
-        stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
-      {/* Brazo derecho de la V — sobre el círculo */}
-      <line x1="54" y1="4" x2="30" y2="50"
-        stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+      {/* Elipse acostada — más fina que la V para dar perspectiva/profundidad */}
+      <ellipse cx="30" cy="61" rx="15" ry="5.5"
+        stroke={stroke} strokeWidth="3.5" fill="none" />
+      {/* Brazo izquierdo de la V */}
+      <line x1="14" y1="7" x2="30" y2="47"
+        stroke={stroke} strokeWidth="5.5" strokeLinecap="round" />
+      {/* Brazo derecho de la V */}
+      <line x1="46" y1="7" x2="30" y2="47"
+        stroke={stroke} strokeWidth="5.5" strokeLinecap="round" />
     </svg>
   );
 };
