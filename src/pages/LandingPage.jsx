@@ -111,7 +111,7 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
           {!isMobile && (
             <button
               onClick={() => navigate("/conocenos")}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, color: scrollY > 50 ? "#444" : "rgba(255,255,255,.85)", fontFamily: "inherit", transition: "color .3s", padding: "4px 0" }}
+              style={{ padding: "10px 20px", borderRadius: 24, border: scrollY > 50 ? "1px solid #ddd" : "1px solid rgba(255,255,255,.4)", background: "transparent", color: scrollY > 50 ? "#222" : "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .3s", whiteSpace: "nowrap" }}
             >
               Conócenos
             </button>
@@ -121,7 +121,7 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
           {isMobile && (
             <button
               onClick={() => navigate("/conocenos")}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: scrollY > 50 ? "#444" : "rgba(255,255,255,.85)", fontFamily: "inherit" }}
+              style={{ padding: "8px 10px", borderRadius: 24, border: scrollY > 50 ? "1px solid #ddd" : "1px solid rgba(255,255,255,.4)", background: "transparent", color: scrollY > 50 ? "#222" : "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all .3s", whiteSpace: "nowrap" }}
             >
               Conócenos
             </button>
