@@ -1,7 +1,8 @@
 import { useRef, useEffect } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { BRAND_PRIMARY } from "../constants";
+
+// Leaflet is loaded globally from index.html
+const L = window.L;
 
 const CreateListingMap = ({ lat, lng, onLocationChange }) => {
   const containerRef = useRef(null);
