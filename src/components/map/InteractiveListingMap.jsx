@@ -107,7 +107,7 @@ const InteractiveListingMap = ({
 
         // Show info window
         infoWindowRef.current.setContent(`
-          <div style="padding: 8px; font-family: Arial, sans-serif; color: #222;">
+          <div style="padding: 8px; font-family: Arial, sans-serif; color: #222; max-width: 200px; max-height: 150px; overflow: hidden;">
             <strong>Espacio #${listing.id}</strong><br/>
             Precio: $${listing.price.toLocaleString()} CLP
           </div>

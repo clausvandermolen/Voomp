@@ -23,7 +23,6 @@ const CreateListingPage = ({ onBack, onPublish, onDeletePhoto, initialData }) =>
         description: initialData.description || "",
         photos: initialData.photos || [],
         type: initialData.type || "covered",
-        vehicleTypes: initialData.vehicleTypes || [],
         access: initialData.access || "",
         width: initialData.dimensions?.width || "",
         length: initialData.dimensions?.length || "",
@@ -47,7 +46,7 @@ const CreateListingPage = ({ onBack, onPublish, onDeletePhoto, initialData }) =>
         availableDays: initialData.availableDays || []
       };
     }
-    return { title: "", description: "", photos: [], type: "covered", vehicleTypes: [], access: "", width: "", length: "", height: "", price: "", priceUnit: "hora", priceDaily: "", priceMonthly: "", dailyStart: "06:00", dailyEnd: "22:00", ev: false, security: [], rules: "", cancellation: "flexible", address: "", location: "", region: "", comuna: "", lat: null, lng: null, availableDays: [] };
+    return { title: "", description: "", photos: [], type: "covered", access: "", width: "", length: "", height: "", price: "", priceUnit: "hora", priceDaily: "", priceMonthly: "", dailyStart: "06:00", dailyEnd: "22:00", ev: false, security: [], rules: "", cancellation: "flexible", address: "", location: "", region: "", comuna: "", lat: null, lng: null, availableDays: [] };
   });
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear, setCalYear] = useState(new Date().getFullYear());
@@ -209,13 +208,6 @@ const CreateListingPage = ({ onBack, onPublish, onDeletePhoto, initialData }) =>
                 {[{ v: "covered", l: "Techado 🏠" }, { v: "outdoor", l: "Aire libre ☀️" }].map(t => (
                   <div key={t.v} onClick={() => setForm({ ...form, type: t.v })} style={{ flex: 1, padding: SPACING.lg, borderRadius: RADIUS.lg, border: form.type === t.v ? `2px solid ${DARK_BG}` : `1px solid ${COLORS.border}`, cursor: "pointer", textAlign: "center", fontWeight: form.type === t.v ? FONT_WEIGHT.bold : FONT_WEIGHT.normal, fontSize: FONT_SIZE.lg, transition: "all .15s" }}>{t.l}</div>
                 ))}
-              </div>
-            </div>
-            <div>
-              <label style={{ fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.xs, display: "block" }}>¿Qué vehículos caben?</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: SPACING.xs }}>
-                <Pill active={form.vehicleTypes.length === VEHICLE_TYPES.length} onClick={() => setForm({ ...form, vehicleTypes: form.vehicleTypes.length === VEHICLE_TYPES.length ? [] : [...VEHICLE_TYPES] })}>Todos</Pill>
-                {VEHICLE_TYPES.map(v => <Pill key={v} active={form.vehicleTypes.includes(v)} onClick={() => setForm({ ...form, vehicleTypes: form.vehicleTypes.includes(v) ? form.vehicleTypes.filter(x => x !== v) : [...form.vehicleTypes, v] })}>{v}</Pill>)}
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: `${SPACING.md}px 0`, borderTop: `1px solid ${COLORS.light}` }}>

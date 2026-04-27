@@ -112,7 +112,7 @@ const CreateListingMap = ({ lat, lng, onLocationChange }) => {
     placeMarker(mapRef.current, lat, lng);
   }, [lat, lng]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+  return <div ref={containerRef} style={{ width: "100%", height: "400px" }} />;
 };
 
 export default CreateListingMap;
