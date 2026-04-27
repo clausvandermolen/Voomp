@@ -11,7 +11,7 @@ export const BRAND_GOLD = "#FF5A7F";
 
 // Legacy exports for backwards compatibility
 export const BRAND_COLOR = BRAND_PRIMARY;
-export const BRAND_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_ACCENT} 50%, ${BRAND_DARK} 100%)`;
+export const BRAND_GRADIENT = BRAND_PRIMARY;
 export const DARK_BG = "#222222";
 
 
