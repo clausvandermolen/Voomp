@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { BRAND_COLOR } from "../constants";
+import { BRAND_PRIMARY } from "../constants";
 
 const CreateListingMap = ({ lat, lng, onLocationChange }) => {
   const containerRef = useRef(null);
@@ -18,7 +18,7 @@ const CreateListingMap = ({ lat, lng, onLocationChange }) => {
       markerRef.current.setLatLng([mLat, mLng]);
     } else {
       const icon = L.divIcon({
-        html: `<div style="width:24px;height:24px;border-radius:50%;background:${BRAND_COLOR};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>`,
+        html: `<div style="width:24px;height:24px;border-radius:50%;background:${BRAND_PRIMARY};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>`,
         className: "",
         iconSize: [24, 24],
         iconAnchor: [12, 12],

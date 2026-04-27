@@ -1,5 +1,17 @@
-export const BRAND_COLOR = "#FF385C";
-export const BRAND_GRADIENT = "linear-gradient(135deg, #FF385C 0%, #E31C5F 50%, #BD1E59 100%)";
+// New brand palette from logo analysis
+export const BRAND_PRIMARY = "#FF385C";
+export const BRAND_SECONDARY = "#FF6B35";
+export const BRAND_LIGHT = "#FFE0E6";
+export const BRAND_LIGHT_ALT = "#FFB3C1";
+export const BRAND_ACCENT = "#FF8A9E";
+export const BRAND_DARK = "#CC2D4A";
+export const BRAND_DARKER = "#991E37";
+export const BRAND_DARKEST = "#661024";
+export const BRAND_GOLD = "#FFD700";
+
+// Legacy exports for backwards compatibility
+export const BRAND_COLOR = BRAND_PRIMARY;
+export const BRAND_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_SECONDARY} 50%, ${BRAND_DARK} 100%)`;
 export const DARK_BG = "#222222";
 
 

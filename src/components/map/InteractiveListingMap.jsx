@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback, useMemo } from 'react';
+import { Loader } from '@googlemaps/js-api-loader';
 
 const InteractiveListingMap = ({
   listings = [],
@@ -11,6 +12,7 @@ const InteractiveListingMap = ({
   const markersRef = useRef([]);
   const searchCircleRef = useRef(null);
   const infoWindowRef = useRef(null);
+  const loaderRef = useRef(null);
 
   const getPinColor = useCallback((price) => {
     if (price < 100000) return '#4CAF50'; // green
@@ -19,9 +21,23 @@ const InteractiveListingMap = ({
   }, []);
 
   const initMap = useCallback(async () => {
-    // Check if Google Maps is loaded
-    if (!window.google) {
-      console.warn('Google Maps not loaded');
+    if (!loaderRef.current) {
+      loaderRef.current = new Loader({
+        apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
+        version: 'weekly',
+        libraries: ['places', 'marker']
+      });
+    }
+
+    try {
+      await loaderRef.current.load();
+    } catch (err) {
+      console.error('Failed to load Google Maps:', err);
+      return null;
+    }
+
+    if (!window.google || !mapRef.current) {
+      console.warn('Google Maps not loaded or map container missing');
       return null;
     }
 
