@@ -58,13 +58,13 @@ const MapView = ({ listings, onSelect, initialCenter, initialZoom, onViewChange 
     listings.forEach(l => {
       if (!l.lat || !l.lng) return;
 
-      const priceHtml = `<div style="background:#fff;border-radius:20px;padding:6px 12px;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.04);white-space:nowrap;cursor:pointer;font-family:'Nunito Sans',sans-serif;transition:all .15s;">${formatCLP(l.price)}</div>`;
+      const priceHtml = `<div style="background:#fff;border-radius:20px;padding:6px 12px;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.04);white-space:nowrap;cursor:pointer;font-family:'Nunito Sans',sans-serif;transition:all .15s;transform:translateX(-50%);">${formatCLP(l.price)}</div>`;
 
       const icon = L.divIcon({
         html: priceHtml,
         className: "",
         iconSize: null,
-        iconAnchor: [30, 15],
+        iconAnchor: [0, 15],
       });
 
       const marker = L.marker([l.lat, l.lng], { icon }).addTo(map.current);
