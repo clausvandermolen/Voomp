@@ -4,7 +4,6 @@ import { BRAND_COLOR, BRAND_GRADIENT } from "../constants";
 import { supabase } from "../lib/supabase";
 import MapView from "../components/MapView";
 import { useNavigate } from "react-router-dom";
-import { VoompLogoBox } from "../components/VoompLogo";
 
 const NAVY = "#1A3C5E";
 
@@ -82,7 +81,7 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.55)", backdropFilter: "blur(6px)" }} />
           <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "#fff", borderRadius: 20, width: isMobile ? "90vw" : "min(460px, 90vw)", padding: isMobile ? "36px 24px" : "44px 36px", textAlign: "center", boxShadow: "0 24px 60px rgba(0,0,0,.3)", animation: "fadeUp .5s ease-out" }}>
             <button onClick={() => setShowWelcome(false)} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} color="#999" /></button>
-            <VoompLogoBox size={56} radius={16} instanceId="popup" />
+            <img src="/logo.png" alt="Voomp" style={{width:56, height:56, borderRadius:16}} />
             <h2 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, marginBottom: 12, letterSpacing: -0.5 }}>
               <span style={{ background: BRAND_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>My Voomp</span> sigue en desarrollo
             </h2>
@@ -102,7 +101,7 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: isMobile ? "12px 16px" : "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: navBg, backdropFilter: scrollY > 50 ? "blur(12px)" : "none", borderBottom: navBorder, transition: "all .3s" }}>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 12 : 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <VoompLogoBox size={isMobile ? 32 : 36} radius={10} instanceId="nav" />
+            <img src="/logo.png" alt="Voomp" style={{width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius:10}} />
             <span style={{ fontWeight: 800, fontSize: isMobile ? 19 : 22, color: navColor, transition: "color .3s" }}>Voomp</span>
           </div>
           {!isMobile && (
@@ -244,7 +243,7 @@ const LandingPage = ({ onEnter, onRegister, onLogin }) => {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 24, flexDirection: isMobile ? "column" : "row", marginBottom: 28 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <VoompLogoBox size={28} radius={8} instanceId="footer" />
+                <img src="/logo.png" alt="Voomp" style={{width:28, height:28, borderRadius:8}} />
                 <span style={{ fontWeight: 800, fontSize: 18, color: "#fff" }}>Voomp</span>
               </div>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)", maxWidth: 200, lineHeight: 1.6 }}>Tu vecino tiene tu lugar.</p>

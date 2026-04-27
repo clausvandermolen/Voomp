@@ -374,10 +374,7 @@ const Header = ({ onNavigate, currentPage, searchQuery, setSearchQuery, user, on
         {/* Top bar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: isMobile ? 56 : 66, gap: SPACING.xs }}>
           <div onClick={() => onNavigate("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <div style={{ width: isMobile ? 28 : 32, height: isMobile ? 28 : 32, borderRadius: RADIUS.md, background: BRAND_GRADIENT, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Car size={isMobile ? 16 : 18} color="#fff" />
-            </div>
-            <span style={{ ...logoTextStyle, fontSize: isMobile ? 17 : 20 }}>Voomp</span>
+            <img src="/logo.png" alt="Voomp" style={{ width: isMobile ? 36 : 40, height: isMobile ? 36 : 40, borderRadius: RADIUS.md }} />
           </div>
 
           {!isMobile && <button onClick={() => setExpanded(!expanded)} style={primaryPillButton} onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(255,56,92,.4)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(255,56,92,.3)"; }}>
