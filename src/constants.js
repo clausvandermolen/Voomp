@@ -1,17 +1,17 @@
-// New brand palette from logo analysis
+// Brand palette — unified red/pink family based on original Voomp color #FF385C
 export const BRAND_PRIMARY = "#FF385C";
-export const BRAND_SECONDARY = "#FF6B35";
+export const BRAND_SECONDARY = "#FF1744";
 export const BRAND_LIGHT = "#FFE0E6";
 export const BRAND_LIGHT_ALT = "#FFB3C1";
-export const BRAND_ACCENT = "#FF8A9E";
-export const BRAND_DARK = "#CC2D4A";
+export const BRAND_ACCENT = "#FF5A7F";
+export const BRAND_DARK = "#E6224D";
 export const BRAND_DARKER = "#991E37";
 export const BRAND_DARKEST = "#661024";
-export const BRAND_GOLD = "#FFD700";
+export const BRAND_GOLD = "#FF5A7F";
 
 // Legacy exports for backwards compatibility
 export const BRAND_COLOR = BRAND_PRIMARY;
-export const BRAND_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_SECONDARY} 50%, ${BRAND_DARK} 100%)`;
+export const BRAND_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_ACCENT} 50%, ${BRAND_DARK} 100%)`;
 export const DARK_BG = "#222222";
 
 
