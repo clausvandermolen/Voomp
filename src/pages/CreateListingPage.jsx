@@ -328,7 +328,7 @@ const CreateListingPage = ({ onBack, onPublish, onDeletePhoto, initialData }) =>
 
                 if (address) {
                   const parts = address.split(", ").map(p => p.trim());
-                  // Nominatim often returns [Number, Street, Comuna]
+                  // Geocoder returns [Number, Street, Comuna]
                   // User wants [Street, Number, Comuna]
                   if (parts.length >= 2 && /^\d+[A-Za-z-]?$/.test(parts[0])) {
                     finalAddress = `${parts[1]}, ${parts[0]}${parts[2] ? ", " + parts[2] : ""}`;
