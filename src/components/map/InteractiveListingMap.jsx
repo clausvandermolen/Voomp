@@ -23,7 +23,7 @@ const InteractiveListingMap = ({
   const initMap = useCallback(async () => {
     if (!loaderRef.current) {
       loaderRef.current = new Loader({
-        apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
+        apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
         version: 'weekly',
         libraries: ['places', 'marker']
       });
