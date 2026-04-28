@@ -199,7 +199,7 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       price: modPrice,
       price_unit: modUnit,
       total: subtotal,
-      status: "pending_approval",
+      status: "pending",
       pay_method: payMethod,
       date: new Date().toISOString().split("T")[0],
       ...(modUnit === "hora" ? {

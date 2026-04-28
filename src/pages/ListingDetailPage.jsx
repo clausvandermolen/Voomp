@@ -12,7 +12,7 @@ import { useNotifications } from "../contexts/NotificationsContext";
 import { useListings } from "../contexts/ListingsContext";
 
 /* ── Busy intervals helpers ── */
-const BLOCKING_STATUSES = new Set(["pending_approval", "confirmed", "cash_unpaid", "completed"]);
+const BLOCKING_STATUSES = new Set(["pending", "confirmed", "cash_unpaid", "completed"]);
 
 const getBusyIntervals = (listingId, bookings) => {
   if (!listingId) return [];
@@ -765,7 +765,7 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, setListings, onU
             {isOwner ? (() => {
               const listingBookings = bookings.filter(b => String(b.listingId || b.listing_id) === String(listing.id));
               const confirmed = listingBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
-              const pending = listingBookings.filter(b => b.status === 'pending_approval');
+              const pending = listingBookings.filter(b => b.status === 'pending');
               const completed = listingBookings.filter(b => b.status === 'completed');
               const totalRevenue = listingBookings
                 .filter(b => b.status !== 'cancelled' && b.status !== 'rejected')
