@@ -1,12 +1,13 @@
 import { Heart, Car } from "lucide-react";
 import { BRAND_COLOR } from "../../constants";
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from "../../constants/styles";
 
 const SavedSection = ({ listings = [], onSelectListing }) => {
   const savedListings = listings.filter((l) => l.favorite);
 
   return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Mis Voomps guardados</h2>
+    <div style={{ background: "#fff", borderRadius: RADIUS.xl, padding: SPACING.xl }}>
+      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>Mis Voomps guardados</h2>
       {savedListings.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0", color: "#555", background: "#f7f7f7", borderRadius: 16 }}>
           <Heart size={40} color="#ddd" style={{ marginBottom: 12 }} />

@@ -175,7 +175,7 @@ const MyVehiclesSection = ({ user, onUpdateUser }) => {
   return (
     <div style={{ background: "#fff", borderRadius: RADIUS.xl, padding: SPACING.xl, marginBottom: SPACING.xl }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACING.lg }}>
-        <h3 style={{ fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, margin: 0 }}>Mis Vehículos</h3>
+        <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, margin: 0 }}>Mis vehículos</h2>
         <button
           onClick={() => setShowAddVehicle(true)}
           style={{

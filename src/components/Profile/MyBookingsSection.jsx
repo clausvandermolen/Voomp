@@ -28,9 +28,9 @@ const MyBookingsSection = ({
 
   return (
     <div style={{ background: "#fff", borderRadius: RADIUS.xl, padding: SPACING.xl }}>
-      <h3 style={{ fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>
-        Mis Reservas
-      </h3>
+      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>
+        Mis reservas
+      </h2>
 
       {activeBookings.length === 0 && pastBookings.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0", color: COLORS.muted }}>

@@ -148,7 +148,8 @@ const ReviewsAndRatings = ({ user, bookings }) => {
 
   return (
     <div style={{ background: "#fff", borderRadius: RADIUS.xl, padding: SPACING.xl }}>
-      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: SPACING.xl }}>
+      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>Reseñas y calificaciones</h2>
+      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: SPACING.xl, marginTop: SPACING.lg }}>
         {[
           { id: "host", label: "Como anfitrión" },
           { id: "driver", label: "Como conductor" },

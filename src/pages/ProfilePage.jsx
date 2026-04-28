@@ -163,7 +163,7 @@ const ProfilePage = ({
           { id: "preferences", l: "Preferencias" },
           { id: "dashboard", l: "Dashboard" },
           { id: "analytics", l: "Estadísticas" },
-          { id: "bookings", l: "Mis Reservas" },
+          { id: "bookings", l: "Mis reservas" },
           { id: "reviews", l: "Reseñas" },
           { id: "settings", l: "Configuración" },
         ].map((t) => (

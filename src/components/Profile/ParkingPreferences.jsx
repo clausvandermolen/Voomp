@@ -47,9 +47,9 @@ const ParkingPreferences = ({ user, onUpdateUser }) => {
 
   return (
     <div style={{ background: "#fff", borderRadius: RADIUS.xl, padding: SPACING.xl }}>
-      <h3 style={{ fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>
-        Preferencias de Estacionamiento
-      </h3>
+      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>
+        Preferencias de estacionamiento
+      </h2>
 
       <div style={{ marginBottom: SPACING.xl }}>
         <label style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, display: "block", marginBottom: SPACING.xs }}>

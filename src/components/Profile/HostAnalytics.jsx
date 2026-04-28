@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DollarSign, Car, ChevronRight } from "lucide-react";
 import { BRAND_COLOR } from "../../constants";
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from "../../constants/styles";
 import { formatCLP } from "../../utils/format";
 import { Badge } from "../ui";
 
@@ -139,8 +140,8 @@ const HostAnalytics = ({ listings = [], bookings = [], user }) => {
   const maxListingEarnings = listingStats.length > 0 ? Math.max(...listingStats.map((l) => l.totalEarnings), 1) : 1;
 
   return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Estadísticas</h2>
+    <div style={{ background: "#fff", borderRadius: RADIUS.xl, padding: SPACING.xl }}>
+      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>Estadísticas</h2>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 28 }}>
         <div style={{ background: "#f0fdf4", borderRadius: 16, padding: 20, border: "1px solid #bbf7d0" }}>

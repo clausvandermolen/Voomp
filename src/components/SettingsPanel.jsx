@@ -154,7 +154,9 @@ const SettingsPanel = ({ user, onUpdateUser, onLogout }) => {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: SPACING.xl + SPACING.xs, alignItems: "start" }}>
+    <div>
+    <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>Configuración</h2>
+    <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: SPACING.xl + SPACING.xs, alignItems: "start", marginTop: SPACING.lg }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 4, position: "sticky", top: SPACING.xl }}>
         {sections.map((s) => {
           const active = openSection === s.id;
@@ -392,6 +394,7 @@ const SettingsPanel = ({ user, onUpdateUser, onLogout }) => {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

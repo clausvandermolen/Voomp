@@ -55,7 +55,8 @@ const HostDashboard = ({
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: SPACING.xl }}>
+      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>Panel del anfitrión</h2>
+      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: SPACING.xl, marginTop: SPACING.lg }}>
         {[
           { id: "listings", label: "Mis anuncios" },
           { id: "incoming", label: `Reservas entrantes (${pendingBookings.length})` },
