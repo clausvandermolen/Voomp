@@ -12,10 +12,11 @@ const SECURITY_FEATURES = [
 ];
 
 const ParkingPreferences = ({ user, onUpdateUser }) => {
-  const [prefs, setPrefs] = useState(user?.parking_preferences || {
+  const [prefs, setPrefs] = useState({
     type: "",
     ev: false,
     security: [],
+    ...(user?.parking_preferences || {}),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
