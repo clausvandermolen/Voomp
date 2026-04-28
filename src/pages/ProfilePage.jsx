@@ -10,6 +10,9 @@ import HostDashboard from "../components/Profile/HostDashboard";
 import MyBookingsSection from "../components/Profile/MyBookingsSection";
 import ReviewsAndRatings from "../components/Profile/ReviewsAndRatings";
 import ParkingPreferences from "../components/Profile/ParkingPreferences";
+import SavedSection from "../components/Profile/SavedSection";
+import HostAnalytics from "../components/Profile/HostAnalytics";
+import SettingsPanel from "../components/SettingsPanel";
 
 const ProfilePage = ({
   onBack,
@@ -152,28 +155,34 @@ const ProfilePage = ({
       </div>
 
       {/* Tabs */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #eee", padding: "0 24px", display: "flex", gap: 0 }}>
-        {["profile", "vehicles", "preferences", "dashboard", "bookings", "reviews"].map((t) => (
+      <div style={{ background: "#fff", borderBottom: "1px solid #eee", padding: "0 24px", display: "flex", gap: 0, overflowX: "auto" }}>
+        {[
+          { id: "profile", l: "Perfil" },
+          { id: "saved", l: "Guardados" },
+          { id: "vehicles", l: "Vehículos" },
+          { id: "preferences", l: "Preferencias" },
+          { id: "dashboard", l: "Dashboard" },
+          { id: "analytics", l: "Estadísticas" },
+          { id: "bookings", l: "Mis Reservas" },
+          { id: "reviews", l: "Reseñas" },
+          { id: "settings", l: "Configuración" },
+        ].map((t) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={t.id}
+            onClick={() => setTab(t.id)}
             style={{
-              background: tab === t ? "#000" : "#fff",
-              color: tab === t ? "#fff" : "#555",
+              background: tab === t.id ? "#000" : "#fff",
+              color: tab === t.id ? "#fff" : "#555",
               border: "none",
               padding: "12px 20px",
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              textTransform: "capitalize",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
-            {t === "profile" && "Perfil"}
-            {t === "vehicles" && "Vehículos"}
-            {t === "preferences" && "Preferencias"}
-            {t === "dashboard" && "Dashboard"}
-            {t === "bookings" && "Mis Reservas"}
-            {t === "reviews" && "Reseñas"}
+            {t.l}
           </button>
         ))}
       </div>
@@ -184,12 +193,20 @@ const ProfilePage = ({
           <ProfileHeader user={user} onUpdateUser={onUpdateUser} />
         )}
 
+        {tab === "saved" && (
+          <SavedSection listings={listings} onSelectListing={onSelectListing} />
+        )}
+
         {tab === "vehicles" && (
           <MyVehiclesSection user={user} onUpdateUser={onUpdateUser} />
         )}
 
         {tab === "preferences" && (
           <ParkingPreferences user={user} onUpdateUser={onUpdateUser} />
+        )}
+
+        {tab === "analytics" && (
+          <HostAnalytics listings={listings} bookings={bookings} user={user} />
         )}
 
         {tab === "dashboard" && (
@@ -228,6 +245,10 @@ const ProfilePage = ({
 
         {tab === "reviews" && (
           <ReviewsAndRatings user={user} bookings={bookings} />
+        )}
+
+        {tab === "settings" && (
+          <SettingsPanel user={user} onUpdateUser={onUpdateUser} onLogout={onLogout} />
         )}
       </div>
     </div>
