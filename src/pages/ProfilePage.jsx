@@ -127,12 +127,19 @@ const ProfilePage = ({
     }
   };
 
-  const handleProposeMod = async (booking, newEndDate) => {
-    if (proposeModification) {
-      await proposeModification(booking.id, newEndDate);
-      onUpdateBooking?.(booking.id, { modStatus: "pending_conductor_approval", modEndDate: newEndDate });
-      pushNotification?.("Propuesta de modificación enviada", "success");
-    }
+  const handleProposeMod = async (booking, modPayload) => {
+    if (!proposeModification) return;
+    const payload = typeof modPayload === "string"
+      ? { modEndDate: modPayload }
+      : (modPayload || {});
+    await proposeModification(booking.id, payload);
+    onUpdateBooking?.(booking.id, {
+      modStatus: "pending_conductor_approval",
+      modEndDate: payload.modEndDate ?? null,
+      modEndTime: payload.modEndTime ?? null,
+      modType: payload.modType ?? null,
+    });
+    pushNotification?.("Propuesta de modificación enviada", "success");
   };
 
   return (
