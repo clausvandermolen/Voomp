@@ -215,6 +215,7 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       } : {}),
       ...(modUnit === "mes" ? {
         monthly_start_date: monthlyStartDate || null,
+        monthly_end_month: monthlyEndMonth || null,
         prorate_amount: monthlyInfo?.prorateAmount || 0,
         full_months: monthlyInfo?.fullMonths || 0,
         monthly_installment: monthlyInfo?.monthlyPrice || 0,
@@ -228,8 +229,10 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       }
       if (payMethod === "mercadopago") {
         const mpAmount = isMonthlyInstallment ? (firstPayment + userDebt) : total;
-        try { await navigator.clipboard.writeText(String(mpAmount)); } catch {}
-        window.open(MP_LINK, "_blank", "noopener,noreferrer");
+        try {
+          await navigator.clipboard.writeText(String(mpAmount));
+          setCopied(true);
+        } catch {}
       }
       setProcessing(false);
       setStep(2);
@@ -274,6 +277,36 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
             </div>
           )}
         </div>
+
+        {payMethod === "mercadopago" && (() => {
+          const mpAmount = isMonthlyInstallment ? (firstPayment + userDebt) : total;
+          return (
+            <div style={{ background: "#fffbea", border: "1px solid #facc15", borderRadius: RADIUS.lg, padding: SPACING.lg, marginBottom: SPACING.xl, textAlign: "left" }}>
+              <div style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: "#78350f", marginBottom: SPACING.xs }}>
+                Paso final: pagar en Mercado Pago
+              </div>
+              <div style={{ fontSize: FONT_SIZE.base, color: "#78350f", marginBottom: SPACING.md }}>
+                {copied ? "Copiamos el monto a tu portapapeles." : "Anota el monto exacto."} Pégalo en la pasarela.
+              </div>
+              <div style={{ background: "#fff", border: "1px dashed #d97706", borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md, textAlign: "center" }}>
+                <div style={{ fontSize: FONT_SIZE.base, color: COLORS.muted, marginBottom: 4 }}>Monto a pegar</div>
+                <div style={{ fontSize: 32, fontWeight: FONT_WEIGHT.bold, color: BRAND_COLOR, letterSpacing: 1 }}>{formatCLP(mpAmount)}</div>
+                <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.muted, marginTop: 4 }}>(sin separadores: <strong>{mpAmount}</strong>)</div>
+              </div>
+              <Btn
+                primary
+                full
+                onClick={async () => {
+                  try { await navigator.clipboard.writeText(String(mpAmount)); setCopied(true); } catch {}
+                  window.open(MP_LINK, "_blank", "noopener,noreferrer");
+                }}
+              >
+                Abrir Mercado Pago
+              </Btn>
+            </div>
+          );
+        })()}
+
         <Btn primary onClick={() => { if (onClose) onClose(); }}>Volver al inicio</Btn>
       </div>
     );
