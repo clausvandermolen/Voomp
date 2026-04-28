@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { AlertCircle, Camera, CreditCard, Lock, Info } from "lucide-react";
+import { AlertCircle, Camera, Info } from "lucide-react";
 import { BRAND_COLOR } from "../constants";
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from "../constants/styles";
 import { formatCLP } from "../utils/format";
-import { Btn, Pill, Input, StarRating } from "./ui";
+import { Btn, Pill, StarRating } from "./ui";
 
 /* ─── Style constants ─── */
 const cardBoxStyle = {
@@ -85,12 +85,14 @@ const billingOption = (active) => ({
 /* ─── Booking Confirmation ─── */
 const BookingConfirmation = ({ listing, user, selectedModality, availableModalities, bookingHours, bookingDate, bookingEndDate, monthlyStartDate, monthlyEndMonth, vehicleInfo, onBooking, onClose, onUpdateUser }) => {
   const [step, setStep] = useState(0);
-  const [cardNum, setCardNum] = useState("");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
   const userDebt = Number(user?.credit) || 0;
-  const [payMethod, setPayMethod] = useState("tarjeta");
+  const [payMethod, setPayMethod] = useState("mercadopago");
   const [billingChoice, setBillingChoice] = useState("installment");
+
+  const MP_LINK = "https://link.mercadopago.cl/myvoomp";
 
   const mod = availableModalities.find(m => m.id === selectedModality) || availableModalities[0] || { price: listing.price, id: listing.priceUnit };
   const modPrice = mod.price;
@@ -181,11 +183,6 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       setError("Debes iniciar sesión para reservar.");
       return;
     }
-    if (payMethod === "tarjeta" && !cardNum.trim()) {
-      setError("Ingresa el número de tarjeta para continuar.");
-      return;
-    }
-
     setError("");
     setProcessing(true);
 
@@ -229,6 +226,11 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
       if (onBooking) {
         await onBooking(bookingData);
       }
+      if (payMethod === "mercadopago") {
+        const mpAmount = isMonthlyInstallment ? (firstPayment + userDebt) : total;
+        try { await navigator.clipboard.writeText(String(mpAmount)); } catch {}
+        window.open(MP_LINK, "_blank", "noopener,noreferrer");
+      }
       setProcessing(false);
       setStep(2);
     } catch (err) {
@@ -262,7 +264,7 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
             </>
           )}
           {vehicleInfo?.name && <div style={mutedTextStyle}>Vehículo: {vehicleInfo.name}{vehicleInfo.plate ? ` · Patente: ${vehicleInfo.plate}` : ""}</div>}
-          <div style={mutedTextStyle}>Pago: {payMethod === "efectivo" ? "Efectivo" : payMethod === "tarjeta" ? "Tarjeta" : "PayPal"}</div>
+          <div style={mutedTextStyle}>Pago: {payMethod === "efectivo" ? "Efectivo" : "Mercado Pago"}</div>
           <div style={mutedTextStyle}>Acceso: {listing.access}</div>
           <div style={mutedTextStyle}>Total: {formatCLP(subtotal + serviceFee)}</div>
           {payMethod === "efectivo" && <div style={{ fontSize: FONT_SIZE.base, color: "#b45309", marginTop: SPACING.xs, fontWeight: FONT_WEIGHT.semibold }}>Comisión pendiente — se descontará en tu próximo pago con tarjeta.</div>}
@@ -376,7 +378,7 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
         <div>
           <h3 style={{ fontWeight: FONT_WEIGHT.bold, fontSize: FONT_SIZE.xl, marginBottom: SPACING.md }}>Pagar con</h3>
           <div style={{ display: "flex", gap: SPACING.sm, marginBottom: SPACING.lg }}>
-            {[{ id: "tarjeta", l: "Tarjeta" }, { id: "paypal", l: "PayPal" }, { id: "efectivo", l: "Efectivo" }].map(m => (
+            {[{ id: "mercadopago", l: "Mercado Pago" }, { id: "efectivo", l: "Efectivo" }].map(m => (
               <Pill
                 key={m.id}
                 active={payMethod === m.id}
@@ -387,21 +389,43 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
             ))}
           </div>
 
-          {payMethod === "tarjeta" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: SPACING.sm, marginBottom: SPACING.xl }}>
-              <Input icon={CreditCard} placeholder="Número de tarjeta" value={cardNum} onChange={e => setCardNum(e.target.value)} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACING.sm }}>
-                <Input placeholder="MM/AA" />
-                <Input icon={Lock} placeholder="CVV" />
+          {payMethod === "mercadopago" && (() => {
+            const mpAmount = isMonthlyInstallment ? (firstPayment + userDebt) : total;
+            const handleCopy = async () => {
+              try {
+                await navigator.clipboard.writeText(String(mpAmount));
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              } catch {
+                setCopied(false);
+              }
+            };
+            return (
+              <div style={{ padding: SPACING.lg, background: "#fffbea", border: "1px solid #facc15", borderRadius: RADIUS.lg, marginBottom: SPACING.xl }}>
+                <div style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, color: "#78350f", marginBottom: SPACING.xs }}>
+                  Pago vía Mercado Pago
+                </div>
+                <div style={{ fontSize: FONT_SIZE.base, color: "#78350f", marginBottom: SPACING.md }}>
+                  Mercado Pago te pedirá ingresar el monto manualmente. Lo copiamos por ti — solo pégalo en la pasarela.
+                </div>
+                <div style={{ background: "#fff", border: "1px dashed #d97706", borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md, textAlign: "center" }}>
+                  <div style={{ fontSize: FONT_SIZE.base, color: COLORS.muted, marginBottom: 4 }}>Monto a pegar</div>
+                  <div style={{ fontSize: 32, fontWeight: FONT_WEIGHT.bold, color: BRAND_COLOR, letterSpacing: 1 }}>
+                    {formatCLP(mpAmount)}
+                  </div>
+                  <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.muted, marginTop: 4 }}>
+                    (sin separadores: <strong>{mpAmount}</strong>)
+                  </div>
+                </div>
+                <Btn full onClick={handleCopy} style={{ marginBottom: SPACING.sm }}>
+                  {copied ? "✓ Monto copiado" : "Copiar monto"}
+                </Btn>
+                <div style={{ fontSize: FONT_SIZE.sm, color: "#78350f" }}>
+                  Al confirmar, se abrirá Mercado Pago en una nueva pestaña.
+                </div>
               </div>
-              <Input placeholder="Nombre en la tarjeta" />
-            </div>
-          )}
-          {payMethod === "paypal" && (
-            <div style={{ padding: SPACING.xl, textAlign: "center", background: COLORS.bg, borderRadius: RADIUS.lg, marginBottom: SPACING.xl }}>
-              <p style={{ fontSize: FONT_SIZE.md, color: COLORS.muted }}>Serás redirigido a PayPal para completar el pago.</p>
-            </div>
-          )}
+            );
+          })()}
           {payMethod === "efectivo" && (
             <div style={warningBoxStyle}>
               <p style={{ fontSize: FONT_SIZE.md, color: "#92400e", fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.xs }}>Pago en efectivo al anfitrión</p>
@@ -481,7 +505,7 @@ const BookingConfirmation = ({ listing, user, selectedModality, availableModalit
               ? `Confirmar (hoy ${formatCLP(payMethod === "efectivo" ? monthlyInfo.prorateAmount : firstPayment + userDebt)})`
               : payMethod === "efectivo"
                 ? `Confirmar reserva (${formatCLP(total)} en efectivo)`
-                : `Confirmar y pagar ${formatCLP(total)}`}
+                : `Abrir Mercado Pago y pagar ${formatCLP(total)}`}
           </Btn>
         </div>
       )}
