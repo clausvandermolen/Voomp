@@ -2,7 +2,7 @@ import { useState } from "react";
 import { User, Shield, CreditCard, Bell, Globe, Lock, ChevronRight, LogOut } from "lucide-react";
 import { BRAND_COLOR } from "../constants";
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from "../constants/styles";
-import { formatCLP, formatRut } from "../utils/format";
+import { formatCLP, formatRut, isValidRut } from "../utils/format";
 import { supabase } from "../lib/supabase";
 import Btn from "./ui/Btn";
 
@@ -194,6 +194,11 @@ const SettingsPanel = ({ user, onUpdateUser, onLogout }) => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if ((form.idType || "rut") === "rut" && form.idNumber && !isValidRut(form.idNumber)) {
+                setError("RUT inválido (revisa el dígito verificador)");
+                setSuccess("");
+                return;
+              }
               saveUser({
                 firstName: form.firstName,
                 lastName1: form.lastName1,

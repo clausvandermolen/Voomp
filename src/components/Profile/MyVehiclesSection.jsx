@@ -80,12 +80,21 @@ const FormAutocomplete = ({ value, onChange, options, placeholder, disabled = fa
   );
 };
 
+const newVehicleId = () => (typeof crypto !== "undefined" && crypto.randomUUID
+  ? crypto.randomUUID()
+  : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+
 const MyVehiclesSection = ({ user, onUpdateUser }) => {
   const [vehicles, setVehicles] = useState(user?.vehicles || []);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Keep local state in sync with realtime profile updates from AuthContext.
+  useEffect(() => {
+    setVehicles(user?.vehicles || []);
+  }, [user?.vehicles]);
   const [newVehicle, setNewVehicle] = useState({
     brand: "",
     model: "",
@@ -137,7 +146,7 @@ const MyVehiclesSection = ({ user, onUpdateUser }) => {
         v.id === editingVehicleId ? { ...payload, id: editingVehicleId } : v
       );
     } else {
-      updated = [...vehicles, { ...payload, id: Date.now() }];
+      updated = [...vehicles, { ...payload, id: newVehicleId() }];
     }
 
     await saveVehicles(updated);

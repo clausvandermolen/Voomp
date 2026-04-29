@@ -3,7 +3,7 @@ import { X, User, Phone, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from "luc
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { COUNTRY_CODES, ID_TYPES } from "../constants";
 import { supabase } from "../lib/supabase";
-import { formatRut } from "../utils/format";
+import { formatRut, isValidRut } from "../utils/format";
 import { Input, Btn } from "./ui";
 
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
@@ -46,7 +46,7 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
     if (!form.phone) return setError("Ingresa tu número de teléfono.");
     if (!form.idNumber) return setError("Ingresa tu número de identificación.");
     const normalizedId = form.idType === "rut" ? formatRut(form.idNumber) : form.idNumber;
-    if (form.idType === "rut" && !/^\d{1,3}(\.\d{3})*-[\dK]$/.test(normalizedId)) return setError("Ingresa un RUT válido.");
+    if (form.idType === "rut" && !isValidRut(normalizedId)) return setError("RUT inválido (revisa el dígito verificador).");
     if (!form.password || form.password.length < 8) return setError("La contraseña debe tener al menos 8 caracteres.");
     if (form.password !== form.passwordConfirm) return setError("Las contraseñas no coinciden.");
 
