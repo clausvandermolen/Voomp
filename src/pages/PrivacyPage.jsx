@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import { SPACING, FONT_SIZE, FONT_WEIGHT, COLORS } from "../constants/styles";
 
 const PrivacyPage = ({ onNavigate }) => {
@@ -81,6 +82,14 @@ const PrivacyPage = ({ onNavigate }) => {
   return (
     <div style={{ background: "#fff", minHeight: "100vh" }}>
       <header style={{ padding: `${SPACING.lg}px ${SPACING.xl}px`, background: "#f7f7f7", borderBottom: "1px solid #ddd" }}>
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate("landing")}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: COLORS.muted, fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold, padding: 0, marginBottom: SPACING.md, fontFamily: "inherit" }}
+          >
+            <ArrowLeft size={16} /> Volver
+          </button>
+        )}
         <h1 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.extrabold, color: COLORS.text, marginBottom: SPACING.sm }}>
           Política de Privacidad
         </h1>
