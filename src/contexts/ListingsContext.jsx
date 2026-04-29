@@ -178,6 +178,14 @@ export function ListingsProvider({ children }) {
     }
   };
 
+  // Spanish/Latin accent-insensitive lowercase compare ("Ñuñoa" matches "nunoa").
+  // Strips the U+0300..U+036F combining-diacritics block produced by NFD.
+  const normalize = (s) => (s || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+
   const filteredListings = useMemo(() => {
     let result = [...listings];
 
@@ -187,12 +195,13 @@ export function ListingsProvider({ children }) {
         outdoor: l => l.type === "outdoor",
         ev: l => l.ev,
         security: l => (l.security?.length || 0) >= 3,
-        hourly: l => l.priceUnit === "hora" || l.price > 0,
+        hourly: l => l.priceUnit === "hora" || (l.price > 0 && !l.priceUnit),
         daily: l => l.priceUnit === "día" || l.priceDaily > 0,
-        airport: l => l.title.toLowerCase().includes("aeropuerto"),
-        downtown: l => l.location?.includes("Centro"),
-        residential: l => l.location?.includes("Ñuñoa") || l.type === "covered",
-        commercial: l => l.location?.includes("Golf") || l.location?.includes("Condes"),
+        monthly: l => l.priceUnit === "mes" || l.priceMonthly > 0,
+        airport: l => normalize(l.title).includes("aeropuerto"),
+        downtown: l => normalize(l.location).includes("centro"),
+        residential: l => normalize(l.location).includes("nunoa") || l.type === "covered",
+        commercial: l => normalize(l.location).includes("golf") || normalize(l.location).includes("condes"),
         motorcycle: l => l.vehicleTypes?.includes("Moto"),
         oversized: l => l.vehicleTypes?.includes("Camioneta") || l.vehicleTypes?.includes("Furgoneta"),
       };
@@ -200,14 +209,18 @@ export function ListingsProvider({ children }) {
     }
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(l => l.title?.toLowerCase().includes(q) || l.location?.toLowerCase().includes(q) || l.address?.toLowerCase().includes(q));
+      const q = normalize(searchQuery);
+      result = result.filter(l =>
+        normalize(l.title).includes(q) ||
+        normalize(l.location).includes(q) ||
+        normalize(l.address).includes(q)
+      );
     }
     if (searchRentalType) {
       result = result.filter(l => {
-        if (searchRentalType === "hora") return l.price > 0;
-        if (searchRentalType === "día") return l.priceDaily > 0 || l.priceUnit === "día";
-        if (searchRentalType === "mes") return l.priceMonthly > 0;
+        if (searchRentalType === "hora") return l.priceUnit === "hora" || (l.price > 0 && !l.priceUnit);
+        if (searchRentalType === "día")  return l.priceUnit === "día"  || l.priceDaily > 0;
+        if (searchRentalType === "mes")  return l.priceUnit === "mes"  || l.priceMonthly > 0;
         return true;
       });
     }
