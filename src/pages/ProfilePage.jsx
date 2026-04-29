@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { useBookings } from "../contexts/BookingsContext";
 import { useNotifications } from "../contexts/NotificationsContext";
@@ -37,6 +38,7 @@ const ProfilePage = ({
 }) => {
   const { pushNotification } = useNotifications();
   const { checkIn, checkOut, proposeModification, respondToModification } = useBookings();
+  const routerNavigate = useNavigate();
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
   const [tab, setTab] = useState(initialTab || "profile");
   const [doneReviews, setDoneReviews] = useState({});
@@ -59,7 +61,9 @@ const ProfilePage = ({
     }
   }, [initialDashboardSubTab]);
 
-  // Sync URL with active tab
+  // Sync URL with active tab — go through react-router so useLocation
+  // observers and the browser history stay coherent (back/forward works
+  // and other components depending on useLocation re-render).
   useEffect(() => {
     let path;
     if (tab === "profile") {
@@ -72,9 +76,9 @@ const ProfilePage = ({
       path = `/profile/${tab}`;
     }
     if (window.location.pathname !== path) {
-      window.history.replaceState(null, "", path);
+      routerNavigate(path, { replace: true });
     }
-  }, [tab, dashboardSubTab]);
+  }, [tab, dashboardSubTab, routerNavigate]);
 
   // Load authored reviews to mark as "Done"
   useEffect(() => {

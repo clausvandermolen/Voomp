@@ -27,6 +27,22 @@ import ConocenosPage from "./pages/ConocenosPage";
 function ListingDetailWrapper({ headerProps, listings, selectedListing, navigate, user, setListings, handleUpdateUser, handleBooking, bookings, setEditingListing }) {
   const { id } = useParams();
   const listing = listings.find(x => String(x.id) === String(id)) || selectedListing;
+
+  // Deep-link recovery: if we landed directly on /listing/:id and the
+  // global listings array hasn't loaded yet (or this listing isn't in it
+  // because of an active filter), show a loading splash instead of
+  // crashing ListingDetailPage with `listing={undefined}`.
+  if (!listing) {
+    return (
+      <>
+        <Header {...headerProps} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", color: "#555", fontSize: 16 }}>
+          Cargando estacionamiento…
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Header {...headerProps} />
@@ -86,10 +102,13 @@ export default function App() {
 
   useEffect(() => {
     // Only redirect to landing once auth has finished loading.
-    // If loading is still true, Supabase hasn't recovered the session yet — don't redirect.
-    if (!loading && !user) {
-      navigate("landing");
-    }
+    // Skip if the user is on a public route (marketing / legal pages) so we
+    // don't kick anonymous visitors out of /conocenos, /terminos, etc.
+    if (loading || user) return;
+    const PUBLIC_PATHS = ["/", "/conocenos", "/como-funciona", "/terminos", "/privacidad", "/register", "/entrar"];
+    const path = window.location.pathname;
+    const isPublic = PUBLIC_PATHS.some(p => path === p || path.startsWith(p + "/"));
+    if (!isPublic) navigate("landing");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading]);
 
