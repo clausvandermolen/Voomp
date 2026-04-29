@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const BookingsContext = createContext();
 
@@ -43,6 +44,7 @@ const mapBooking = (b) => ({
 
 export function BookingsProvider({ children }) {
   const [bookings, setBookings] = useState([]);
+  const { user } = useAuth();
 
   const fetchBookings = async () => {
     const { data, error } = await supabase
@@ -53,9 +55,12 @@ export function BookingsProvider({ children }) {
     setBookings((data || []).map(mapBooking));
   };
 
-  // Realtime: keep bookings in sync — filtered by current user (conductor or host)
+  // Realtime: keep bookings in sync — filtered by current user (conductor or host).
+  // Driven by AuthContext so we re-subscribe when the user changes (login/logout)
+  // and tear down cleanly on unmount.  Channel name is namespaced per user so
+  // StrictMode double-mounts and concurrent sessions don't collide.
   useEffect(() => {
-    let channel;
+    if (!user?.id) return;
     const handleChange = (payload) => {
       if (payload.eventType === 'INSERT') {
         const mapped = mapBooking(payload.new);
@@ -67,16 +72,13 @@ export function BookingsProvider({ children }) {
         setBookings(prev => prev.filter(x => x.id !== payload.old.id));
       }
     };
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      channel = supabase
-        .channel('bookings-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `conductor_id=eq.${user.id}` }, handleChange)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `host_id=eq.${user.id}` }, handleChange)
-        .subscribe();
-    });
-    return () => { if (channel) supabase.removeChannel(channel); };
-  }, []);
+    const channel = supabase
+      .channel(`bookings-changes:${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `conductor_id=eq.${user.id}` }, handleChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `host_id=eq.${user.id}` }, handleChange)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
 
   const addBooking = async (data) => {
     const { vehicle_name, vehicle_plate } = data;

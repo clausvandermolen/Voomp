@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -16,6 +16,14 @@ export function NotificationsProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
   const [toasts, setToasts] = useState([]);
+  const toastTimersRef = useRef(new Map());
+
+  // Clear any pending toast timers when the provider unmounts so we don't
+  // call setToasts on an unmounted component.
+  useEffect(() => () => {
+    toastTimersRef.current.forEach(clearTimeout);
+    toastTimersRef.current.clear();
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
@@ -73,7 +81,11 @@ export function NotificationsProvider({ children }) {
     if (!message) return;
     const id = `${Date.now()}_${Math.random()}`;
     setToasts(prev => [...prev, { id, message, level }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+    const timer = setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+      toastTimersRef.current.delete(id);
+    }, 3500);
+    toastTimersRef.current.set(id, timer);
   }, []);
 
   // Polymorphic: object → persist a notification for another user (DB insert);
