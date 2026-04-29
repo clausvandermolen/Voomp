@@ -9,6 +9,9 @@ const CreateListingMap = ({ lat, lng, onLocationChange }) => {
   const onLocationChangeRef = useRef(onLocationChange);
   // Track last coords set internally to avoid flyTo loops
   const internalCoordsRef = useRef(null);
+  // Abort controller for in-flight Nominatim reverse-geocode requests so a
+  // rapid second click cancels the first and avoids a stale response winning.
+  const geocodeAbortRef = useRef(null);
 
   useEffect(() => { onLocationChangeRef.current = onLocationChange; }, [onLocationChange]);
 
@@ -49,8 +52,15 @@ const CreateListingMap = ({ lat, lng, onLocationChange }) => {
       const { lat: newLat, lng: newLng } = e.latlng;
       placeMarker(mapRef.current, newLat, newLng);
       internalCoordsRef.current = `${newLat},${newLng}`;
+      // Cancel any pending reverse-geocode so the latest click wins.
+      geocodeAbortRef.current?.abort();
+      const controller = new AbortController();
+      geocodeAbortRef.current = controller;
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${newLat}&lon=${newLng}&accept-language=es&addressdetails=1`);
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${newLat}&lon=${newLng}&accept-language=es&addressdetails=1`,
+          { signal: controller.signal }
+        );
         const data = await res.json();
         if (data && data.address) {
           const a = data.address;
@@ -88,6 +98,7 @@ const CreateListingMap = ({ lat, lng, onLocationChange }) => {
           onLocationChangeRef.current(newLat, newLng, "", "", null);
         }
       } catch (err) {
+        if (err?.name === "AbortError") return; // newer click superseded this one
         console.error(err);
         onLocationChangeRef.current(newLat, newLng, "", "");
       }
@@ -96,6 +107,7 @@ const CreateListingMap = ({ lat, lng, onLocationChange }) => {
     setTimeout(() => { mapRef.current?.invalidateSize(); }, 200);
 
     return () => {
+      geocodeAbortRef.current?.abort();
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; markerRef.current = null; }
     };
   }, []);

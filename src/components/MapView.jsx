@@ -46,8 +46,11 @@ const MapView = ({ listings, onSelect, initialCenter, initialZoom, onViewChange 
     };
   }, []);
 
-  // Update markers only when listings change (compare by id list)
-  const listingIds = listings.map(l => l.id).join(",");
+  // Update markers when any visible field of a listing changes — price,
+  // coordinates, or the set of ids. Keying only on the id list missed
+  // edits to existing listings (a host renaming or repricing wouldn't
+  // refresh the popup).
+  const listingsKey = listings.map(l => `${l.id}:${l.price}:${l.lat}:${l.lng}`).join("|");
 
   useEffect(() => {
     if (!map.current) return;
@@ -88,7 +91,7 @@ const MapView = ({ listings, onSelect, initialCenter, initialZoom, onViewChange 
 
       markersRef.current.push(marker);
     });
-  }, [listingIds]);
+  }, [listingsKey]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 12, overflow: "hidden" }}>
