@@ -124,6 +124,17 @@ export function ListingsProvider({ children }) {
   };
 
   const deleteListing = async (id) => {
+    // Storage cleanup first — listing_photos rows cascade-delete via FK, but the
+    // physical files in the listing-photos bucket would be orphaned otherwise.
+    try {
+      const { data: files } = await supabase.storage.from('listing-photos').list(String(id));
+      if (files?.length) {
+        const paths = files.map(f => `${id}/${f.name}`);
+        await supabase.storage.from('listing-photos').remove(paths);
+      }
+    } catch (e) {
+      console.error('listing storage cleanup failed (non-fatal):', e);
+    }
     const { error } = await supabase.from('listings').delete().eq('id', id);
     if (error) { console.error(error); return; }
     setListings(prev => prev.filter(x => x.id !== id));
