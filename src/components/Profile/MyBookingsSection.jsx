@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { MessageCircle, Clock, CheckCircle } from "lucide-react";
+import { MessageCircle, Clock, CheckCircle, Star } from "lucide-react";
 import { BRAND_COLOR } from "../../constants";
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from "../../constants/styles";
 import { formatCLP } from "../../utils/format";
+import { supabase } from "../../lib/supabase";
+import ReviewModal from "../ReviewModal";
 
 const MyBookingsSection = ({
   bookings = [],
@@ -17,10 +19,43 @@ const MyBookingsSection = ({
 }) => {
   const [expandedId, setExpandedId] = useState(null);
   const [activePage, setActivePage] = useState(1);
+  const [reviewModal, setReviewModal] = useState(null); // { booking, type: 'listing'|'host' }
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const userBookings = bookings.filter((b) => b.conductorId === user?.id);
-  const activeBookings = userBookings.filter((b) => !b.completed);
-  const pastBookings = userBookings.filter((b) => b.completed);
+  const activeBookings = userBookings.filter((b) => b.status !== "completed" && b.status !== "cancelled" && b.status !== "rejected");
+  const pastBookings = userBookings.filter((b) => b.status === "completed");
+
+  const handleReviewSubmit = async ({ rating, comment }) => {
+    if (!reviewModal || !user?.id) return;
+    const { booking, type } = reviewModal;
+    setSubmittingReview(true);
+    try {
+      const targetId = type === "host" ? (booking.hostId || booking.host_id) : null;
+      const { error } = await supabase.from("reviews").insert({
+        review_type: type,
+        listing_id: booking.listingId || booking.listing_id,
+        target_id: targetId,
+        author_id: user.id,
+        author_name: `${user.firstName || ""} ${user.lastName1 || ""}`.trim(),
+        rating,
+        comment,
+        booking_id: booking.id,
+      });
+      if (error) {
+        if (error.code === "23505") {
+          pushNotification?.("Ya calificaste esta reserva", "warning");
+        } else {
+          pushNotification?.("No se pudo publicar la reseña", "error");
+        }
+        return;
+      }
+      setDoneReviews?.(prev => ({ ...prev, [`${booking.id}_${type}`]: true }));
+      pushNotification?.("Reseña publicada", "success");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const itemsPerPage = 5;
   const paginatedActive = activeBookings.slice((activePage - 1) * itemsPerPage, activePage * itemsPerPage);
@@ -246,17 +281,67 @@ const MyBookingsSection = ({
               <h4 style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.sm }}>
                 Reservas pasadas ({pastBookings.length})
               </h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: SPACING.xs }}>
-                {pastBookings.slice(0, 3).map((b) => (
-                  <div key={b.id} style={{ fontSize: FONT_SIZE.base, color: COLORS.light }}>
-                    {b.listingTitle} • {b.startDate}
-                  </div>
-                ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACING.sm }}>
+                {pastBookings.map((b) => {
+                  const ratedListing = doneReviews?.[`${b.id}_listing`];
+                  const ratedHost = doneReviews?.[`${b.id}_host`];
+                  return (
+                    <div key={b.id} style={{ padding: SPACING.sm, background: COLORS.bg, borderRadius: RADIUS.md }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACING.xs }}>
+                        <div style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold }}>{b.listingTitle}</div>
+                        <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.light }}>{b.startDate}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: SPACING.xs }}>
+                        <button
+                          onClick={() => !ratedListing && setReviewModal({ booking: b, type: "listing" })}
+                          disabled={ratedListing}
+                          style={{
+                            flex: 1, fontSize: FONT_SIZE.sm,
+                            background: ratedListing ? COLORS.bg : "#fff",
+                            color: ratedListing ? COLORS.light : BRAND_COLOR,
+                            border: `1px solid ${ratedListing ? COLORS.border : BRAND_COLOR}44`,
+                            borderRadius: RADIUS.sm,
+                            padding: `${SPACING.xs}px ${SPACING.sm}px`,
+                            cursor: ratedListing ? "default" : "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                          }}
+                        >
+                          <Star size={12} /> {ratedListing ? "Estacionamiento ✓" : "Calificar estacionamiento"}
+                        </button>
+                        <button
+                          onClick={() => !ratedHost && setReviewModal({ booking: b, type: "host" })}
+                          disabled={ratedHost}
+                          style={{
+                            flex: 1, fontSize: FONT_SIZE.sm,
+                            background: ratedHost ? COLORS.bg : "#fff",
+                            color: ratedHost ? COLORS.light : BRAND_COLOR,
+                            border: `1px solid ${ratedHost ? COLORS.border : BRAND_COLOR}44`,
+                            borderRadius: RADIUS.sm,
+                            padding: `${SPACING.xs}px ${SPACING.sm}px`,
+                            cursor: ratedHost ? "default" : "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                          }}
+                        >
+                          <Star size={12} /> {ratedHost ? "Anfitrión ✓" : "Calificar anfitrión"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
       )}
+
+      <ReviewModal
+        open={!!reviewModal}
+        onClose={() => setReviewModal(null)}
+        onSubmit={handleReviewSubmit}
+        title={reviewModal?.type === "host" ? "Calificar anfitrión" : "Calificar estacionamiento"}
+        subtitle={reviewModal?.booking?.listingTitle}
+        submitting={submittingReview}
+      />
     </div>
   );
 };
