@@ -379,6 +379,21 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, setListings, onU
     setSavingHostReview(true);
     setHostReviewError("");
     try {
+      // Resolve the most recent completed booking between this user and host (required by DB).
+      const { data: bk } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('conductor_id', user.id)
+        .eq('host_id', hostId)
+        .eq('status', 'completed')
+        .order('checked_out_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!bk?.id) {
+        setHostReviewError("Solo puedes reseñar al anfitrión después de completar una reserva con él.");
+        setSavingHostReview(false);
+        return;
+      }
       const { data, error } = await supabase.from('reviews').insert({
         review_type: 'host',
         target_id: hostId,
@@ -387,6 +402,7 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, setListings, onU
         author_name: `${user.firstName || ''} ${user.lastName1 || ''}`.trim(),
         rating: hostReviewRating,
         comment: hostReviewText.trim(),
+        booking_id: bk.id,
       }).select().single();
       if (error) {
         console.error('host review insert error:', error);
@@ -412,6 +428,21 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, setListings, onU
     setSavingReview(true);
     setReviewError("");
     try {
+      // Resolve the most recent completed booking on this listing (required by DB).
+      const { data: bk } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('conductor_id', user.id)
+        .eq('listing_id', listing.id)
+        .eq('status', 'completed')
+        .order('checked_out_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!bk?.id) {
+        setReviewError("Solo puedes reseñar este estacionamiento después de completar una reserva.");
+        setSavingReview(false);
+        return;
+      }
       const { data: inserted, error } = await supabase.from('reviews').insert({
         review_type: 'listing',
         listing_id: listing.id,
@@ -419,6 +450,7 @@ const ListingDetailPage = ({ listing, onBack, onNavigate, user, setListings, onU
         author_name: `${user.firstName || ""} ${user.lastName1 || ""}`.trim(),
         rating: reviewRating,
         comment: reviewText.trim(),
+        booking_id: bk.id,
       }).select().single();
       if (error) {
         console.error('review insert error:', error);
