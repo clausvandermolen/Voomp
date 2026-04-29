@@ -16,9 +16,14 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
   const isHost = String(user?.id) === String(booking.hostId || booking.host_id);
   const otherId = isHost ? (booking.conductorId || booking.conductor_id) : (booking.hostId || booking.host_id);
   const otherName = isHost ? (booking.conductorName || booking.conductor_name || "Conductor") : (booking.hostName || booking.host_name || "Anfitrión");
-  const chatKey = makeChatKey(user.id, otherId);
+  const chatKey = otherId ? makeChatKey(user.id, otherId) : null;
 
   useEffect(() => {
+    if (!chatKey) {
+      setError("No se pudo identificar al otro participante de este chat.");
+      setLoading(false);
+      return;
+    }
     let isMounted = true;
     setError(null);
     // Initial load
@@ -70,7 +75,7 @@ const BookingChat = ({ booking, user, onClose, onMarkRead }) => {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!newMsg.trim()) return;
+    if (!newMsg.trim() || !chatKey || !otherId) return;
     setSending(true);
     setError(null);
     const msg = {

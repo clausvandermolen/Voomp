@@ -26,8 +26,10 @@ const MessagesPage = ({ onBack, user, onMarkRead }) => {
         setLoading(false);
       });
 
-    // Realtime subscription for new messages
-    const channel = supabase.channel('messages-page')
+    // Realtime subscription for new messages.
+    // Channel name is namespaced per user so concurrent sessions / StrictMode
+    // double-mounts don't collide on the same channel id.
+    const channel = supabase.channel(`messages-page:${user.id}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'messages',
         filter: `sender_id=eq.${user.id}`
