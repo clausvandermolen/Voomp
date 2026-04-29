@@ -148,34 +148,33 @@ export default function App() {
       }
 
       // --- 2. HANDLE NEW IMAGE UPLOADS ---
+      // Position is now assigned atomically by a DB trigger
+      // (listing_photos_assign_position), so the client doesn't need to
+      // pre-compute startPos and concurrent uploads can't collide.
       if (form.photoFiles && form.photoFiles.length > 0) {
-        // Calculate starting position for new photos
-        const { data: existingPhotos } = await supabase
-          .from('listing_photos')
-          .select('position')
-          .eq('listing_id', savedListing.id)
-          .order('position', { ascending: false })
-          .limit(1);
-        
-        const startPos = existingPhotos && existingPhotos.length > 0 ? existingPhotos[0].position + 1 : 0;
-
         for (let i = 0; i < form.photoFiles.length; i++) {
           const file = form.photoFiles[i];
           const ext = file.name?.split('.').pop() || 'jpg';
           const path = `${savedListing.id}/${Date.now()}_${i}.${ext}`;
-          
+          let uploaded = false;
+
           try {
             const { error: storageError } = await supabase.storage.from('listing-photos').upload(path, file);
             if (storageError) throw storageError;
+            uploaded = true;
 
             const { data: { publicUrl } } = supabase.storage.from('listing-photos').getPublicUrl(path);
-            const { error: insertError } = await supabase.from('listing_photos').insert({ 
-              listing_id: savedListing.id, 
-              url: publicUrl, 
-              position: startPos + i 
+            const { error: insertError } = await supabase.from('listing_photos').insert({
+              listing_id: savedListing.id,
+              url: publicUrl,
             });
             if (insertError) throw insertError;
           } catch (storageErr) {
+            // Rollback: if the file uploaded but the DB insert failed,
+            // remove the orphan storage object.
+            if (uploaded) {
+              try { await supabase.storage.from('listing-photos').remove([path]); } catch {}
+            }
             photoErrors.push(`${file.name || `foto ${i + 1}`}: ${storageErr.message || "Error desconocido"}`);
             console.error("Storage error:", storageErr);
           }
