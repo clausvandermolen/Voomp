@@ -4,10 +4,18 @@ import { useAuth } from './AuthContext';
 
 const NotificationsContext = createContext();
 
+const TOAST_COLORS = {
+  success: { bg: '#dcfce7', border: '#86efac', text: '#166534' },
+  error:   { bg: '#fee2e2', border: '#fca5a5', text: '#991b1b' },
+  warning: { bg: '#fef3c7', border: '#fcd34d', text: '#92400e' },
+  info:    { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af' },
+};
+
 export function NotificationsProvider({ children }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unread, setUnread] = useState(0);
+  const [toasts, setToasts] = useState([]);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
@@ -60,11 +68,27 @@ export function NotificationsProvider({ children }) {
     setUnread(prev => Math.max(0, prev - 1));
   };
 
-  // Helper: push a notification to Supabase. Throws on error.
-  // NOTE: do NOT use .select().single() here — under RLS the inserter is
-  // typically not the row owner, so reading the row back would be blocked
-  // by the SELECT policy and the whole insert would error out.
-  const pushNotification = async ({ userId, type, title, body, link }) => {
+  // In-app toast helper for the current user.
+  const notify = useCallback((message, level = 'info') => {
+    if (!message) return;
+    const id = `${Date.now()}_${Math.random()}`;
+    setToasts(prev => [...prev, { id, message, level }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
+
+  // Polymorphic: object → persist a notification for another user (DB insert);
+  // string → ephemeral in-app toast for the current user.
+  // Many call sites use the 2-string toast form, so we route them here.
+  // NOTE: do NOT use .select().single() on the DB insert — under RLS the
+  // inserter is typically not the row owner, so reading the row back would
+  // be blocked by the SELECT policy and the whole insert would error out.
+  const pushNotification = async (arg, level) => {
+    if (typeof arg === 'string') {
+      notify(arg, level);
+      return;
+    }
+    if (!arg || typeof arg !== 'object') return;
+    const { userId, type, title, body, link } = arg;
     if (!userId) return;
     const { error } = await supabase
       .from('notifications')
@@ -83,8 +107,35 @@ export function NotificationsProvider({ children }) {
   };
 
   return (
-    <NotificationsContext.Provider value={{ notifications, unread, fetchNotifications, markAllRead, markRead, pushNotification }}>
+    <NotificationsContext.Provider value={{ notifications, unread, fetchNotifications, markAllRead, markRead, pushNotification, notify }}>
       {children}
+      {/* Toast stack — fixed top-right */}
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 10000, display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'none' }}>
+        {toasts.map(t => {
+          const c = TOAST_COLORS[t.level] || TOAST_COLORS.info;
+          return (
+            <div
+              key={t.id}
+              style={{
+                background: c.bg,
+                border: `1px solid ${c.border}`,
+                color: c.text,
+                padding: '10px 16px',
+                borderRadius: 10,
+                fontSize: 14,
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(0,0,0,.08)',
+                minWidth: 220,
+                maxWidth: 360,
+                pointerEvents: 'auto',
+                animation: 'fadeIn .2s',
+              }}
+            >
+              {t.message}
+            </div>
+          );
+        })}
+      </div>
     </NotificationsContext.Provider>
   );
 }
