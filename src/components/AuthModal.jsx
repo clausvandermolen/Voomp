@@ -28,8 +28,14 @@ const AuthModal = ({ open, onClose, onSuccess, initialMode = "register" }) => {
     if (!HCAPTCHA_SITE_KEY) { resolve(null); return; }
     captchaResolveRef.current = resolve;
     captchaRef.current?.execute();
-    // Fallback timeout — if hCaptcha doesn't respond in 8s, proceed without token
-    setTimeout(() => { if (captchaResolveRef.current) { captchaResolveRef.current = null; resolve(null); } }, 8000);
+    // Fallback timeout — if hCaptcha doesn't respond in 8s, proceed without token.
+    // Only clear the ref if it still points to OUR resolver (avoid stomping a newer call).
+    setTimeout(() => {
+      if (captchaResolveRef.current === resolve) {
+        captchaResolveRef.current = null;
+        resolve(null);
+      }
+    }, 8000);
   });
 
   const handleRegister = async () => {

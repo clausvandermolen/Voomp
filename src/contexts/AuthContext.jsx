@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext();
@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const fetchTokenRef = useRef(0);
 
   useEffect(() => {
     let sub;
@@ -77,7 +78,9 @@ export function AuthProvider({ children }) {
   }, [session?.user?.id]);
 
   const fetchProfile = async (uid, sessionUser) => {
+    const myToken = ++fetchTokenRef.current;
     const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+    if (myToken !== fetchTokenRef.current) return; // stale — newer fetch in flight
     if (error && error.code !== 'PGRST116') console.error('fetchProfile error:', error);
     if (data) {
       setUser({
