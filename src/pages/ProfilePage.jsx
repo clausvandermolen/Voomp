@@ -99,7 +99,7 @@ const ProfilePage = ({
   const handleCheckIn = async (booking) => {
     if (checkIn) {
       await checkIn(booking.id);
-      onUpdateBooking?.(booking.id, { status: "active_checkin" });
+      onUpdateBooking?.(booking.id, { status: "active" });
       pushNotification?.("Check-in realizado", "success");
     }
   };
@@ -115,8 +115,9 @@ const ProfilePage = ({
   const handleRespondMod = async (booking, accepted) => {
     if (respondToModification) {
       await respondToModification(booking.id, accepted);
-      const newStatus = accepted ? "active_pending_checkin" : "active_checkin";
-      onUpdateBooking?.(booking.id, { status: newStatus, modStatus: null });
+      // respondToModification only mutates mod_status / end_date / end_time on the DB.
+      // The booking's primary status is unchanged — keep what we already have locally.
+      onUpdateBooking?.(booking.id, { modStatus: null });
       pushNotification?.(accepted ? "Propuesta aceptada" : "Propuesta rechazada", "success");
     }
   };

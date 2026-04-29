@@ -86,7 +86,7 @@ const MyBookingsSection = ({
                       {b.startDate} a {b.endDate}
                     </div>
 
-                    {b.status === "active_checkin" && onCheckOut && (
+                    {b.status === "active" && onCheckOut && (
                       <div style={{ display: "flex", gap: SPACING.xs, marginBottom: SPACING.sm }}>
                         <button
                           onClick={() => onCheckOut(b)}
@@ -109,7 +109,7 @@ const MyBookingsSection = ({
                       </div>
                     )}
 
-                    {b.status === "active_pending_checkin" && onCheckIn && (
+                    {(b.status === "confirmed" || b.status === "active_pending_checkin") && onCheckIn && (
                       <div style={{ display: "flex", gap: SPACING.xs, marginBottom: SPACING.sm }}>
                         <button
                           onClick={() => onCheckIn(b)}
