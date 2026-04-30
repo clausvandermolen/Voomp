@@ -398,7 +398,7 @@ const Header = ({ onNavigate, currentPage, searchQuery, setSearchQuery, user, on
             {/* Notifications Bell */}
             {!isMobile && <div ref={notifRef} style={{ position: "relative" }}>
               <button
-                onClick={() => { const opening = !notifOpen; setNotifOpen(opening); if (opening && unread > 0) markAllRead(); }}
+                onClick={() => setNotifOpen(o => !o)}
                 style={iconButton}
                 onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
                 onMouseLeave={e => e.currentTarget.style.background = "none"}
@@ -558,7 +558,7 @@ const Header = ({ onNavigate, currentPage, searchQuery, setSearchQuery, user, on
             <div style={mobileNavBadge}>{unreadMessages > 9 ? "9+" : unreadMessages}</div>
           )}
         </button>
-        <button onClick={() => { if (unread > 0) markAllRead(); setNotifOpen(o => !o); }} style={mobileNavButton}>
+        <button onClick={() => setNotifOpen(o => !o)} style={mobileNavButton}>
           <Bell size={22} />
           <span>Alertas</span>
           {unread > 0 && (
