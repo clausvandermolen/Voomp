@@ -33,8 +33,12 @@ const HostDashboard = ({
     }
   }, [initialDashboardSubTab, dashboardSubTab, onDashboardSubTabChange]);
 
+  // Active host bookings: anything that isn't terminal. The legacy `!b.completed`
+  // boolean filter never worked because the bookings schema uses a status string,
+  // so completed/cancelled/rejected rows were leaking into "Reservas entrantes".
+  const TERMINAL = new Set(["completed", "cancelled", "rejected"]);
   const incomingBookings = bookings.filter(
-    (b) => b.hostId === user?.id && !b.completed
+    (b) => b.hostId === user?.id && !TERMINAL.has(b.status)
   );
   const pendingBookings = incomingBookings.filter((b) => b.status === "pending");
 

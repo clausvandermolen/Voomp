@@ -55,6 +55,21 @@ export function BookingsProvider({ children }) {
     setBookings((data || []).map(mapBooking));
   };
 
+  // Re-fetch bookings whenever the authenticated user changes. RLS scopes
+  // results to the current user (host or conductor), so we MUST issue a
+  // fresh query once auth resolves — otherwise the initial App-mount call
+  // ran before Supabase recovered the session and returned 0 rows, and
+  // existing bookings never reappeared. Mirrors the pattern in
+  // ListingsContext.
+  useEffect(() => {
+    if (user?.id) {
+      fetchBookings();
+    } else {
+      setBookings([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   // Realtime: keep bookings in sync — filtered by current user (conductor or host).
   // Driven by AuthContext so we re-subscribe when the user changes (login/logout)
   // and tear down cleanly on unmount.  Channel name is namespaced per user so
