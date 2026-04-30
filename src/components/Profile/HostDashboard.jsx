@@ -33,18 +33,23 @@ const HostDashboard = ({
     }
   }, [initialDashboardSubTab, dashboardSubTab, onDashboardSubTabChange]);
 
-  // Active host bookings: anything that isn't terminal. The legacy `!b.completed`
-  // boolean filter never worked because the bookings schema uses a status string,
-  // so completed/cancelled/rejected rows were leaking into "Reservas entrantes".
+  // All bookings where the current user is the host, split by lifecycle stage.
   const TERMINAL = new Set(["completed", "cancelled", "rejected"]);
-  const incomingBookings = bookings.filter(
-    (b) => b.hostId === user?.id && !TERMINAL.has(b.status)
-  );
+  const myHostBookings = bookings.filter((b) => b.hostId === user?.id);
+  const incomingBookings = myHostBookings.filter((b) => !TERMINAL.has(b.status));
+  const pastBookings = myHostBookings.filter((b) => TERMINAL.has(b.status));
   const pendingBookings = incomingBookings.filter((b) => b.status === "pending");
 
+  // Listings the host actually owns (the prop is the global, possibly-filtered
+  // list — must scope it to host_id so the dashboard never shows somebody
+  // else's anuncios).
+  const myListings = listings.filter((l) =>
+    (l.host?.userId || l.host_id) === user?.id
+  );
+
   const thisMonth = new Date();
-  const monthBookings = bookings.filter((b) => {
-    if (b.hostId !== user?.id) return false;
+  const monthBookings = myHostBookings.filter((b) => {
+    if (!b.startDate) return false;
     try {
       return new Date(b.startDate).getMonth() === thisMonth.getMonth();
     } catch {
@@ -52,9 +57,13 @@ const HostDashboard = ({
     }
   });
 
-  const monthEarnings = monthBookings.reduce((sum, b) => sum + (b.total || 0), 0);
-  const allEarnings = bookings
-    .filter((b) => b.hostId === user?.id)
+  // Earnings only count bookings that actually paid out (confirmed or completed).
+  const PAID_STATUSES = new Set(["confirmed", "active", "active_checkin", "active_pending_checkin", "completed"]);
+  const monthEarnings = monthBookings
+    .filter((b) => PAID_STATUSES.has(b.status))
+    .reduce((sum, b) => sum + (b.total || 0), 0);
+  const allEarnings = myHostBookings
+    .filter((b) => PAID_STATUSES.has(b.status))
     .reduce((sum, b) => sum + (b.total || 0), 0);
 
   return (
@@ -86,13 +95,13 @@ const HostDashboard = ({
 
       {dashboardSubTab === "listings" && (
         <div>
-          {listings.length === 0 ? (
+          {myListings.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0", color: COLORS.light }}>
               Sin anuncios
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: SPACING.sm }}>
-              {listings.map((l) => (
+              {myListings.map((l) => (
                 <div
                   key={l.id}
                   style={{
@@ -206,6 +215,44 @@ const HostDashboard = ({
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {pastBookings.length > 0 && (
+            <div style={{ marginTop: SPACING.xl, paddingTop: SPACING.xl, borderTop: `1px solid ${COLORS.border}` }}>
+              <h4 style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold, marginBottom: SPACING.sm }}>
+                Historial ({pastBookings.length})
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACING.xs }}>
+                {pastBookings.map((b) => {
+                  const statusLabel = b.status === "completed" ? "Completada"
+                    : b.status === "cancelled" ? "Cancelada"
+                    : "Rechazada";
+                  const statusColor = b.status === "completed" ? "#065f46"
+                    : b.status === "cancelled" ? "#92400e"
+                    : "#991b1b";
+                  return (
+                    <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: SPACING.sm, background: COLORS.bg, borderRadius: RADIUS.md }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: FONT_WEIGHT.semibold, fontSize: FONT_SIZE.base }}>
+                          {b.listingTitle}
+                        </div>
+                        <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.light }}>
+                          {b.conductorName} • {b.startDate || (b.createdAt && new Date(b.createdAt).toLocaleDateString("es-CL"))}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: FONT_WEIGHT.semibold, fontSize: FONT_SIZE.base }}>
+                          {formatCLP(b.total)}
+                        </div>
+                        <div style={{ fontSize: FONT_SIZE.xs, color: statusColor, fontWeight: FONT_WEIGHT.semibold }}>
+                          {statusLabel}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

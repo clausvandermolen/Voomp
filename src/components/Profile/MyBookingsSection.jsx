@@ -23,8 +23,9 @@ const MyBookingsSection = ({
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const userBookings = bookings.filter((b) => b.conductorId === user?.id);
-  const activeBookings = userBookings.filter((b) => b.status !== "completed" && b.status !== "cancelled" && b.status !== "rejected");
-  const pastBookings = userBookings.filter((b) => b.status === "completed");
+  const TERMINAL = new Set(["completed", "cancelled", "rejected"]);
+  const activeBookings = userBookings.filter((b) => !TERMINAL.has(b.status));
+  const pastBookings = userBookings.filter((b) => TERMINAL.has(b.status));
 
   const handleReviewSubmit = async ({ rating, comment }) => {
     if (!reviewModal || !user?.id) return;
@@ -285,12 +286,23 @@ const MyBookingsSection = ({
                 {pastBookings.map((b) => {
                   const ratedListing = doneReviews?.[`${b.id}_listing`];
                   const ratedHost = doneReviews?.[`${b.id}_host`];
+                  const reviewable = b.status === "completed";
+                  const statusLabel = b.status === "completed" ? "Completada"
+                    : b.status === "cancelled" ? "Cancelada"
+                    : "Rechazada";
+                  const statusColor = b.status === "completed" ? "#065f46"
+                    : b.status === "cancelled" ? "#92400e"
+                    : "#991b1b";
                   return (
                     <div key={b.id} style={{ padding: SPACING.sm, background: COLORS.bg, borderRadius: RADIUS.md }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACING.xs }}>
                         <div style={{ fontSize: FONT_SIZE.md, fontWeight: FONT_WEIGHT.semibold }}>{b.listingTitle}</div>
-                        <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.light }}>{b.startDate}</div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                          <div style={{ fontSize: FONT_SIZE.sm, color: COLORS.light }}>{b.startDate}</div>
+                          <div style={{ fontSize: FONT_SIZE.xs, color: statusColor, fontWeight: FONT_WEIGHT.semibold }}>{statusLabel}</div>
+                        </div>
                       </div>
+                      {reviewable && (
                       <div style={{ display: "flex", gap: SPACING.xs }}>
                         <button
                           onClick={() => !ratedListing && setReviewModal({ booking: b, type: "listing" })}
@@ -325,6 +337,7 @@ const MyBookingsSection = ({
                           <Star size={12} /> {ratedHost ? "Anfitrión ✓" : "Calificar anfitrión"}
                         </button>
                       </div>
+                      )}
                     </div>
                   );
                 })}
