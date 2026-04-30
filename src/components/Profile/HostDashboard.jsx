@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { BRAND_COLOR } from "../../constants";
 import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, COLORS } from "../../constants/styles";
@@ -19,19 +18,12 @@ const HostDashboard = ({
   initialDashboardSubTab,
   onDashboardSubTabChange,
 }) => {
-  const [dashboardSubTab, setDashboardSubTab] = useState(
-    initialDashboardSubTab || "listings"
-  );
-
-  useEffect(() => {
-    if (
-      initialDashboardSubTab &&
-      initialDashboardSubTab !== dashboardSubTab
-    ) {
-      setDashboardSubTab(initialDashboardSubTab);
-      if (onDashboardSubTabChange) onDashboardSubTabChange(null);
-    }
-  }, [initialDashboardSubTab, dashboardSubTab, onDashboardSubTabChange]);
+  // Controlled component: ProfilePage owns the active subtab. Earlier this
+  // component kept its own copy and used a useEffect that re-synced from the
+  // prop whenever local state changed — clicking "Reservas entrantes" or
+  // "Analytics" was instantly reverted to the URL-derived initial subtab.
+  const dashboardSubTab = initialDashboardSubTab || "listings";
+  const setDashboardSubTab = (id) => onDashboardSubTabChange?.(id);
 
   // All bookings where the current user is the host, split by lifecycle stage.
   const TERMINAL = new Set(["completed", "cancelled", "rejected"]);
@@ -68,7 +60,7 @@ const HostDashboard = ({
 
   return (
     <div>
-      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>Panel del anfitrión</h2>
+      <h2 style={{ fontSize: FONT_SIZE.xl2, fontWeight: FONT_WEIGHT.bold, marginBottom: SPACING.lg, margin: 0 }}>Dashboard</h2>
       <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${COLORS.border}`, marginBottom: SPACING.xl, marginTop: SPACING.lg }}>
         {[
           { id: "listings", label: "Mis anuncios" },
